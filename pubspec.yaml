@@ -1,0 +1,66 @@
+name: gps_speedometer
+description: GPS Speedometer & Trip Analysis - Production-ready app by Chowdhury eLab
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  get: ^4.6.6
+
+  # Database
+  drift: ^2.18.0
+  drift_flutter: ^0.2.1
+  sqlite3_flutter_libs: ^0.5.22
+
+  # GPS & Location
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+
+  # Map
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # File & GPX
+  path_provider: ^2.1.4
+  share_plus: ^10.0.2
+  xml: ^6.5.0
+  file_picker: ^8.1.2
+
+  # Camera (dashcam overlay)
+  camera: ^0.11.0+2
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.4.2
+  fl_chart: ^0.69.0
+  cupertino_icons: ^1.0.8
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  drift_dev: ^2.18.0
+  build_runner: ^2.4.12
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf
+        - asset: assets/fonts/RobotoMono-Bold.ttf
+          weight: 700
