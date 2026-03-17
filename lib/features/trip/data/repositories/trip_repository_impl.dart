@@ -56,6 +56,31 @@ class TripRepositoryImpl implements TripRepository {
       ));
 
   @override
+  Future<void> saveImportedTrip(TripEntity trip) async {
+    final tripId = await _tripDao.insertTrip(TripsTableCompanion.insert(
+      startTime: trip.startTime,
+      endTime: drift.Value(trip.endTime),
+      title: drift.Value(trip.title),
+      distance: drift.Value(trip.distanceMeters),
+      avgSpeed: drift.Value(trip.avgSpeedKmh),
+      maxSpeed: drift.Value(trip.maxSpeedKmh),
+      durationSeconds: drift.Value(trip.durationSeconds),
+    ));
+
+    final companions = trip.points.map((p) => TripPointsTableCompanion.insert(
+      tripId: tripId,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      speed: drift.Value(p.speedKmh),
+      accuracy: drift.Value(p.accuracy),
+      altitude: drift.Value(p.altitude),
+      timestamp: p.timestamp,
+    )).toList();
+
+    await _pointDao.insertPoints(companions);
+  }
+
+  @override
   Future<List<TripEntity>> getAllTrips() async {
     final rows = await _tripDao.getAllTrips();
     return rows.map((r) => TripEntity.fromDb(r)).toList();

@@ -4,6 +4,7 @@
 ///   - GetX routing
 ///   - Flutter localizations (30+ languages)
 ///   - Root dependency binding
+///   - Phase 6: Background location service initialisation
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,37 +13,53 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'app_pages.dart';
 import 'core/utils/app_theme.dart';
+import 'core/localization/app_translations.dart';
+import 'core/services/background_location_service.dart';
+import 'features/settings/presentation/controllers/settings_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Phase 6: Register the background service configuration once
+  await BackgroundLocationService.init();
+
+  // Initialize controllers that need to persist data on startup
+  Get.put(SettingsController());
 
   // Lock to portrait by default (HUD mode overrides temporarily)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
-  // Status bar style for dark theme
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarBrightness: Brightness.dark,
-    statusBarIconBrightness: Brightness.light,
-  ));
-
   runApp(const GpsSpeedometerApp());
 }
+
 
 class GpsSpeedometerApp extends StatelessWidget {
   const GpsSpeedometerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+    ));
+
+    final settings = Get.find<SettingsController>();
+
+    return Obx(() => GetMaterialApp(
       title: 'GPS Speedometer',
       debugShowCheckedModeBanner: false,
 
-      // Theme
+      // Theme (Reactive)
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      themeMode: settings.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
+
+      // Localization 
+      translations: AppTranslations(),
+      locale: settings.locale.value,
+      fallbackLocale: const Locale('en'),
 
       // Localization — 30+ languages
       localizationsDelegates: const [
@@ -90,6 +107,6 @@ class GpsSpeedometerApp extends StatelessWidget {
 
       // Default transition
       defaultTransition: Transition.cupertino,
-    );
+    ));
   }
 }

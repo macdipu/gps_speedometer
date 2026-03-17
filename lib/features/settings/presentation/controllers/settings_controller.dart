@@ -1,13 +1,16 @@
 /// SettingsController — GetX Controller
-/// Manages user preferences: speed unit, theme, language.
-/// Persists settings using shared_preferences (via GetStorage for simplicity here).
+/// Manages user preferences: speed unit, theme, language, speed alerts.
+/// Persists settings using Shared Preferences.
 
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/utils/gps_utils.dart';
 
 class SettingsController extends GetxController {
+  late final SharedPreferences _prefs;
+
   // --------------------------------------------------------------------------
   // Reactive state
   // --------------------------------------------------------------------------
@@ -15,15 +18,53 @@ class SettingsController extends GetxController {
   final isDarkMode = true.obs;
   final locale = const Locale('en').obs;
 
+  // Speed Limit Alerts (Phase 7)
+  /// Whether the audio speed limit warning is active
+  final speedAlertEnabled = false.obs;
+
+  /// Speed limit threshold in km/h (converted to mph in UI if user uses mph)
+  final speedLimitKmh = 120.0.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _prefs = await SharedPreferences.getInstance();
+
+    // Load speed unit
+    final unitIndex = _prefs.getInt('speedUnit') ?? 0;
+    speedUnit.value = SpeedUnit.values[unitIndex];
+
+    // Load theme
+    isDarkMode.value = _prefs.getBool('isDarkMode') ?? true;
+    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+
+    // Load locale
+    final localeCode = _prefs.getString('locale') ?? 'en';
+    locale.value = Locale(localeCode);
+    Get.updateLocale(locale.value);
+
+    // Load speed alerts
+    speedAlertEnabled.value = _prefs.getBool('speedAlertEnabled') ?? false;
+    speedLimitKmh.value = _prefs.getDouble('speedLimitKmh') ?? 120.0;
+  }
+
   // --------------------------------------------------------------------------
   // Speed unit
   // --------------------------------------------------------------------------
 
-  void setSpeedUnit(SpeedUnit unit) => speedUnit.value = unit;
+  void setSpeedUnit(SpeedUnit unit) {
+    speedUnit.value = unit;
+    _prefs.setInt('speedUnit', unit.index);
+  }
 
   void toggleSpeedUnit() {
-    speedUnit.value =
+    final newUnit =
         speedUnit.value == SpeedUnit.kmh ? SpeedUnit.mph : SpeedUnit.kmh;
+    setSpeedUnit(newUnit);
   }
 
   String get speedUnitLabel =>
@@ -33,7 +74,11 @@ class SettingsController extends GetxController {
   // Theme
   // --------------------------------------------------------------------------
 
-  void toggleTheme() => isDarkMode.value = !isDarkMode.value;
+  void toggleTheme() {
+    isDarkMode.value = !isDarkMode.value;
+    _prefs.setBool('isDarkMode', isDarkMode.value);
+    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+  }
 
   // --------------------------------------------------------------------------
   // Language
@@ -41,8 +86,27 @@ class SettingsController extends GetxController {
 
   void setLocale(Locale l) {
     locale.value = l;
+    _prefs.setString('locale', l.languageCode);
     Get.updateLocale(l);
   }
+
+  // --------------------------------------------------------------------------
+  // Speed Limit Alerts (Phase 7)
+  // --------------------------------------------------------------------------
+
+  void toggleSpeedAlert() {
+    speedAlertEnabled.value = !speedAlertEnabled.value;
+    _prefs.setBool('speedAlertEnabled', speedAlertEnabled.value);
+  }
+
+  void setSpeedLimit(double kmh) {
+    speedLimitKmh.value = kmh;
+    _prefs.setDouble('speedLimitKmh', kmh);
+  }
+
+  // --------------------------------------------------------------------------
+  // Supported locales
+  // --------------------------------------------------------------------------
 
   static const List<Map<String, dynamic>> supportedLocales = [
     {'code': 'en', 'label': 'English'},

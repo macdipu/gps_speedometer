@@ -1,12 +1,16 @@
 /// TripDetailsScreen — detailed view of a trip with route map and stats.
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/gpx_utils.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../controllers/trip_controller.dart';
 
@@ -52,6 +56,22 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     if (mounted) setState(() => _isPlaying = false);
   }
 
+  Future<void> _exportGpx() async {
+    if (trip == null) return;
+    try {
+      final xmlString = GpxUtils.generateGpx(trip!);
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/trip_${trip!.startTime.millisecondsSinceEpoch}.gpx';
+      final file = File(path);
+      await file.writeAsString(xmlString);
+
+      await Share.shareXFiles([XFile(path)], subject: 'GPX Export - Trip');
+    } catch (e) {
+      Get.snackbar('Export Failed', 'Error creating GPX: $e', 
+          snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -84,6 +104,12 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       appBar: AppBar(
         title: Text(trip!.title ?? 'Trip Details'),
         actions: [
+          if (trip != null)
+            IconButton(
+              icon: const Icon(Icons.download, color: AppColors.primary),
+              onPressed: _exportGpx,
+              tooltip: 'Export GPX',
+            ),
           if (points.isNotEmpty)
             IconButton(
               icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow,

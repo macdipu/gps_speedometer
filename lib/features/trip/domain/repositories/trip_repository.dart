@@ -11,6 +11,7 @@ abstract class TripRepository {
     required DateTime endTime,
   });
   Future<void> addTripPoint(TripPointEntity point);
+  Future<void> saveImportedTrip(TripEntity trip);
   Future<List<TripEntity>> getAllTrips();
   Stream<List<TripEntity>> watchAllTrips();
   Future<TripEntity?> getTripById(int id);

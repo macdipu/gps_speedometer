@@ -28,7 +28,7 @@ class SpeedometerScreen extends StatelessWidget {
       return Scaffold(
         backgroundColor: AppColors.bgDark,
         appBar: AppBar(
-          title: const Text('GPS Speedometer'),
+          title: Text('speedometer'.tr),
           actions: [
             // Unit toggle button
             TextButton(
@@ -132,7 +132,7 @@ class _ModeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const modes = [
+    final modes = [
       (SpeedometerMode.digital, Icons.display_settings, 'Digital'),
       (SpeedometerMode.analog, Icons.speed, 'Analog'),
       (SpeedometerMode.hud, Icons.remove_red_eye, 'HUD'),

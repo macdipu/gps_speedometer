@@ -18,23 +18,32 @@ class TripHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDark,
-      appBar: AppBar(title: const Text('Trip History')),
+      appBar: AppBar(
+        title: Text('trips'.tr),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_upload, color: AppColors.primary),
+            onPressed: controller.importGpx,
+            tooltip: 'Import GPX',
+          ),
+        ],
+      ),
       body: Obx(() {
         final trips = controller.trips;
         if (trips.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.route, size: 72, color: AppColors.textDisabled),
-                SizedBox(height: 16),
+                const Icon(Icons.route, size: 72, color: AppColors.textDisabled),
+                const SizedBox(height: 16),
                 Text(
-                  'No trips recorded yet',
-                  style: TextStyle(
+                  'no_trips'.tr,
+                  style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 16),
                 ),
-                SizedBox(height: 8),
-                Text(
+                const SizedBox(height: 8),
+                const Text(
                   'Go to the Trip tab and press START',
                   style: TextStyle(
                       color: AppColors.textDisabled, fontSize: 13),

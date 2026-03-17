@@ -14,6 +14,8 @@ import '../features/analysis/presentation/screens/trip_analysis_screen.dart';
 import '../features/analysis/presentation/controllers/analysis_controller.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/controllers/settings_controller.dart';
+import '../features/dashcam/presentation/screens/dashcam_screen.dart';
+import '../features/dashcam/presentation/controllers/dashcam_controller.dart';
 import '../core/database/app_database.dart';
 import '../core/shared_widgets/home_shell.dart';
 
@@ -28,6 +30,7 @@ abstract class Routes {
   static const tripDetails = '/trip/details';
   static const tripAnalysis = '/trip/analysis';
   static const settings = '/settings';
+  static const dashcam = '/dashcam';
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +71,11 @@ class AppPages {
       name: Routes.settings,
       page: () => SettingsScreen(),
       binding: SettingsBinding(),
+    ),
+    GetPage(
+      name: Routes.dashcam,
+      page: () => DashcamScreen(),
+      binding: DashcamBinding(),
     ),
   ];
 }
@@ -114,5 +122,13 @@ class SettingsBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<SettingsController>(() => SettingsController());
+  }
+}
+
+/// Dashcam feature binding
+class DashcamBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut<DashcamController>(() => DashcamController());
   }
 }

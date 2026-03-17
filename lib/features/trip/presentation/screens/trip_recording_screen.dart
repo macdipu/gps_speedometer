@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_map/flutter_map.dart' as flutterMap;
+import 'package:latlong2/latlong.dart' as latlong2;
 
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
@@ -16,7 +18,16 @@ class TripRecordingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDark,
-      appBar: AppBar(title: const Text('Trip Recording')),
+      appBar: AppBar(
+        title: const Text('Trip Recording'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam, color: AppColors.primary),
+            tooltip: 'Dashcam',
+            onPressed: () => Get.toNamed('/dashcam'),
+          ),
+        ],
+      ),
       body: Obx(() {
         final recording = controller.isRecording.value;
         return Padding(
@@ -73,21 +84,84 @@ class TripRecordingScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                
+                const SizedBox(height: 24),
+                
+                // Live Map View
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Obx(() {
+                      final points = controller.livePoints;
+                      
+                      // Use the latest position or a default if no points yet
+                      final center = points.isNotEmpty 
+                          ? latlong2.LatLng(points.last.latitude, points.last.longitude)
+                          : latlong2.LatLng(23.8103, 90.4125); // Default to Dhaka
+                      
+                      return flutterMap.FlutterMap(
+                        options: flutterMap.MapOptions(
+                          initialCenter: center,
+                          initialZoom: 16,
+                          interactionOptions: const flutterMap.InteractionOptions(
+                            flags: flutterMap.InteractiveFlag.all,
+                          ),
+                        ),
+                        children: [
+                          flutterMap.TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.chowdhuryelab.gps_speedometer',
+                          ),
+                          if (points.length >= 2)
+                            flutterMap.PolylineLayer(
+                              polylines: [
+                                flutterMap.Polyline(
+                                  points: points.map((p) => latlong2.LatLng(p.latitude, p.longitude)).toList(),
+                                  color: AppColors.primary,
+                                  strokeWidth: 4.0,
+                                ),
+                              ],
+                            ),
+                          if (points.isNotEmpty)
+                            flutterMap.MarkerLayer(
+                              markers: [
+                                flutterMap.Marker(
+                                  point: center,
+                                  width: 24,
+                                  height: 24,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      );
+                    }),
+                  ),
+                ),
               ] else ...[
                 // Empty state
-                Column(
-                  children: [
-                    Icon(Icons.play_circle_outline,
-                        size: 80,
-                        color: AppColors.textDisabled),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Press START to begin recording\nyour trip',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: AppColors.textSecondary, fontSize: 16),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.play_circle_outline,
+                          size: 80,
+                          color: AppColors.textDisabled),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Press START to begin recording\nyour trip',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ],

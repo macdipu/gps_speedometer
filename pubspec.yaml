@@ -37,12 +37,19 @@ dependencies:
   # Camera (dashcam overlay)
   camera: ^0.11.0+2
 
+  # Background Service (Phase 6)
+  flutter_background_service: ^5.0.9
+
+  # Text-to-Speech for Speed Alerts (Phase 7)
+  flutter_tts: ^4.1.0
+
   # Utilities
   intl: ^0.20.2
   uuid: ^4.4.2
   fl_chart: ^0.69.0
   cupertino_icons: ^1.0.8
   vector_math: ^2.1.4
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:

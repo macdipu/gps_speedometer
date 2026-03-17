@@ -2,25 +2,19 @@
 
 A production-ready Flutter application for tracking real-time speed, recording trips, and analyzing driving data. Built with Vertical Slice Architecture and Clean Architecture principles.
 
-## 🚀 Current Features
+## 🚀 Features
 
-*   **Real-time GPS Tracking:** Monitor live speed, maximum speed, average speed, and distance traveled.
+*   **Real-time GPS Tracking:** Monitor live speed, maximum speed, average speed, heading, and altitude.
 *   **Trip Recording:** Start, stop, and save trips. The app logs location points continuously during an active trip.
-*   **Trip Analysis:** View historical trips with detailed metrics (duration, distance, top speed, average speed).
+*   **Background Location Tracking:** Continues to record trip data seamlessly even when the app is in the background or the screen is locked.
+*   **Trip Analysis & Map Integration:** View historical trips with detailed metrics (duration, distance, top speed, average speed) and visualize the driven route on an interactive OpenStreetMap.
+*   **Dashcam Video Overlay:** Record video using the device camera with real-time speed, location, and timestamp watermarks overlaid. Features loop recording with auto-deletion of oldest files when storage limits are reached.
+*   **GPX Export & Import:** Export recorded trips to standard `.gpx` format for use in other GIS tools, and import existing GPX files to view them in the app.
+*   **HUD (Head-Up Display) Mode:** A mirrored UI mode designed to be reflected on the car's windshield for safe night driving, complete with speed limit visual warnings.
+*   **Speed Limit Alerts:** Configurable audio (Text-to-Speech) and visual warnings when exceeding user-defined speed limits.
 *   **Local Persistence:** Robust, offline-first data storage using **Drift (SQLite)**.
-*   **Settings Management:** Customizable preferences (e.g., speed units).
+*   **Settings Management:** Customizable preferences (e.g., speed units, themes, languages).
 *   **State Management:** Reactive clean UI powered by **GetX**.
-
-## 🛠️ Missing Features (Planned Additions)
-
-The following features are planned for future development to make this an ultimate driving companion app:
-
-*   **🗺️ Map Integration & Route Playback:** Visualize live trips on a map (using `flutter_map`) and replay previous routes with polyline drawing.
-*   **📹 Dashcam Video Overlay:** Record video using the device camera with real-time speed, location, and timestamp watermarks overlaid on the footage.
-*   **📁 GPX Export & Import:** Export recorded trips to standard `.gpx` format for use in other GIS tools, and import existing GPX files.
-*   **🪞 HUD (Head-Up Display) Mode:** A mirrored UI mode designed to be reflected on the car's windshield for safe night driving.
-*   **🔋 Background Location Tracking:** Continue to record trip data seamlessly even when the app is in the background or the screen is locked.
-*   **⚠️ Speed Limit Alerts:** Configurable audio and visual warnings when exceeding predefined speed limits.
 
 ## 🏗️ Technical Stack
 
@@ -28,7 +22,10 @@ The following features are planned for future development to make this an ultima
 *   **Architecture:** Vertical Slice Architecture + Clean Architecture
 *   **State Management & Routing:** GetX
 *   **Database:** Drift (SQLite)
-*   **Location:** Geolocator
+*   **Location:** Geolocator & Flutter Background Service
+*   **Maps:** Flutter Map & LatLong2
+*   **Camera:** Camera plugin & FFMPEG (for video overlays)
+*   **Audio:** Flutter TTS
 
 ## 🏃 Getting Started
 

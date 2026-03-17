@@ -1,4 +1,4 @@
-/// SettingsScreen — configure speed unit, theme, and language.
+/// SettingsScreen — configure speed unit, theme, language, and speed alerts.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -16,13 +16,13 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgDark,
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text('settings'.tr)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Speed Unit
           _SettingsSection(
-            title: 'Speed Unit',
+            title: 'speed_unit'.tr,
             child: Obx(() => Row(
                   children: [
                     _UnitChip(
@@ -48,13 +48,13 @@ class SettingsScreen extends StatelessWidget {
 
           // Theme
           _SettingsSection(
-            title: 'Theme',
+            title: 'theme'.tr,
             child: Obx(() => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Dark Mode',
+                    Text('dark_mode'.tr,
                         style:
-                            TextStyle(color: AppColors.textPrimary)),
+                            const TextStyle(color: AppColors.textPrimary)),
                     Switch(
                       value: controller.isDarkMode.value,
                       onChanged: (_) => controller.toggleTheme(),
@@ -66,9 +66,132 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
+          // ── Phase 7: Speed Limit Alerts ──────────────────────────────────
+          _SettingsSection(
+            title: 'Speed Limit Alert',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Toggle row
+                Obx(() => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Enable audio alert',
+                              style: TextStyle(color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(height: 2),
+                            Obx(() => Text(
+                                  controller.speedAlertEnabled.value
+                                      ? 'Speaks when you exceed the limit'
+                                      : 'Alert is off',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                )),
+                          ],
+                        ),
+                        Switch(
+                          value: controller.speedAlertEnabled.value,
+                          onChanged: (_) => controller.toggleSpeedAlert(),
+                          activeColor: AppColors.accent,
+                        ),
+                      ],
+                    )),
+
+                const SizedBox(height: 16),
+
+                // Speed limit slider
+                Obx(() {
+                  final isKmh = controller.speedUnit.value == SpeedUnit.kmh;
+                  final limitKmh = controller.speedLimitKmh.value;
+                  // Display in user's preferred unit
+                  final displayLimit =
+                      isKmh ? limitKmh : GpsUtils.kmhToMph(limitKmh);
+                  final unit = isKmh ? 'km/h' : 'mph';
+                  final minVal = isKmh ? 20.0 : 10.0;
+                  final maxVal = isKmh ? 200.0 : 125.0;
+                  final displayClamped =
+                      displayLimit.clamp(minVal, maxVal);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Speed limit',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: controller.speedAlertEnabled.value
+                                  ? AppColors.accent.withOpacity(0.15)
+                                  : AppColors.bgCard,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: controller.speedAlertEnabled.value
+                                    ? AppColors.accent
+                                    : AppColors.textDisabled,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              '${displayClamped.toStringAsFixed(0)} $unit',
+                              style: TextStyle(
+                                color: controller.speedAlertEnabled.value
+                                    ? AppColors.accent
+                                    : AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        value: displayClamped,
+                        min: minVal,
+                        max: maxVal,
+                        divisions: isKmh ? 36 : 23,
+                        activeColor: controller.speedAlertEnabled.value
+                            ? AppColors.accent
+                            : AppColors.textDisabled,
+                        inactiveColor:
+                            AppColors.textDisabled.withOpacity(0.3),
+                        onChanged: controller.speedAlertEnabled.value
+                            ? (val) {
+                                // Convert back to km/h if user picked mph
+                                final kmh = isKmh
+                                    ? val
+                                    : GpsUtils.mphToKmh(val);
+                                controller.setSpeedLimit(kmh);
+                              }
+                            : null,
+                      ),
+                    ],
+                  );
+                }),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
           // Language
           _SettingsSection(
-            title: 'Language (${SettingsController.supportedLocales.length}+)',
+            title: '${'language'.tr} (${SettingsController.supportedLocales.length}+)',
             child: Obx(() => Column(
                   children: SettingsController.supportedLocales
                       .map((l) => _LanguageTile(
