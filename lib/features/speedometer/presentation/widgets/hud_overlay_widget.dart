@@ -64,147 +64,167 @@ class _HudOverlayWidgetState extends State<HudOverlayWidget>
           final speedKmh = GpsUtils.msToKmh(s.speedMs);
           final limitKmh = settings.speedLimitKmh.value;
           final alertEnabled = settings.speedAlertEnabled.value;
-          final isOverLimit = alertEnabled && speedKmh > limitKmh;
-
-          return Transform(
-            // Mirror horizontally for HUD windshield reflection
-            alignment: Alignment.center,
-            transform: Matrix4.identity()..scale(-1.0, 1.0),
-            child: Stack(
-              children: [
-                // Main speed display
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Speed number
-                      Text(
-                        s.displaySpeed.toStringAsFixed(0),
-                        style: TextStyle(
-                          color: isOverLimit ? AppColors.error : AppColors.hudGreen,
-                          fontSize: 120,
-                          fontWeight: FontWeight.w900,
-                          shadows: [
-                            Shadow(
-                              color: isOverLimit
-                                  ? AppColors.error
-                                  : AppColors.hudGreen,
-                              blurRadius: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Unit label
-                      Text(
-                        s.unitLabel.toUpperCase(),
-                        style: TextStyle(
-                          color: isOverLimit ? AppColors.error : AppColors.hudGreen,
-                          fontSize: 28,
-                          letterSpacing: 12,
-                          shadows: [
-                            Shadow(
-                              color: isOverLimit
-                                  ? AppColors.error
-                                  : AppColors.hudGreen,
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Heading info
-                      Row(
+          final isOverLimit = alertEnabled && speedKmh > limitKmh;          return Stack(
+            children: [
+              Transform(
+                // Mirror horizontally for HUD windshield reflection
+                alignment: Alignment.center,
+                transform: Matrix4.identity()..scale(-1.0, 1.0),
+                child: Stack(
+                  children: [
+                    // Main speed display
+                    Center(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.navigation,
-                            color: AppColors.hudGreen.withOpacity(0.6),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
+                          // Speed number
                           Text(
-                            '${s.heading.toStringAsFixed(0)}°',
+                            s.displaySpeed.toStringAsFixed(0),
                             style: TextStyle(
-                              color: AppColors.hudGreen.withOpacity(0.6),
-                              fontSize: 18,
-                              letterSpacing: 4,
+                              color: isOverLimit ? AppColors.error : AppColors.hudGreen,
+                              fontSize: 120,
+                              fontWeight: FontWeight.w900,
+                              shadows: [
+                                Shadow(
+                                  color: isOverLimit
+                                      ? AppColors.error
+                                      : AppColors.hudGreen,
+                                  blurRadius: 20,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 20),
-                          Icon(
-                            Icons.terrain,
-                            color: AppColors.hudGreen.withOpacity(0.6),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
+                          // Unit label
                           Text(
-                            '${s.altitude.toStringAsFixed(0)}m',
+                            s.unitLabel.toUpperCase(),
                             style: TextStyle(
-                              color: AppColors.hudGreen.withOpacity(0.6),
-                              fontSize: 18,
-                              letterSpacing: 4,
+                              color: isOverLimit ? AppColors.error : AppColors.hudGreen,
+                              fontSize: 28,
+                              letterSpacing: 12,
+                              shadows: [
+                                Shadow(
+                                  color: isOverLimit
+                                      ? AppColors.error
+                                      : AppColors.hudGreen,
+                                  blurRadius: 10,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                          const SizedBox(height: 16),
 
-                      const SizedBox(height: 20),
-                      Text(
-                        'TAP TO EXIT HUD',
-                        style: TextStyle(
-                          color: AppColors.hudGreen.withOpacity(0.4),
-                          fontSize: 12,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Speed limit warning overlay (Phase 7)
-                if (isOverLimit)
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: AnimatedBuilder(
-                      animation: _warnOpacity,
-                      builder: (_, __) => Opacity(
-                        opacity: _warnOpacity.value,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.error,
-                              width: 2,
-                            ),
-                          ),
-                          child: Row(
+                          // Heading info
+                          Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.warning_amber_rounded,
-                                  color: AppColors.error, size: 18),
+                              Icon(
+                                Icons.navigation,
+                                color: AppColors.hudGreen.withOpacity(0.6),
+                                size: 16,
+                              ),
                               const SizedBox(width: 6),
                               Text(
-                                'SPEED LIMIT',
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 2,
+                                '${s.heading.toStringAsFixed(0)}°',
+                                style: TextStyle(
+                                  color: AppColors.hudGreen.withOpacity(0.6),
+                                  fontSize: 18,
+                                  letterSpacing: 4,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Icon(
+                                Icons.terrain,
+                                color: AppColors.hudGreen.withOpacity(0.6),
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${s.altitude.toStringAsFixed(0)}m',
+                                style: TextStyle(
+                                  color: AppColors.hudGreen.withOpacity(0.6),
+                                  fontSize: 18,
+                                  letterSpacing: 4,
                                 ),
                               ),
                             ],
                           ),
+                        ],
+                      ),
+                    ),
+
+                    // Speed limit warning overlay (Phase 7)
+                    if (isOverLimit)
+                      Positioned(
+                        top: 20,
+                        right: 20,
+                        child: AnimatedBuilder(
+                          animation: _warnOpacity,
+                          builder: (_, __) => Opacity(
+                            opacity: _warnOpacity.value,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.error,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded,
+                                      color: AppColors.error, size: 18),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'SPEED LIMIT',
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Explicit, un-mirrored close button
+              Positioned(
+                top: 24,
+                left: 24,
+                child: SafeArea(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => widget.controller.setMode(SpeedometerMode.digital),
+                      borderRadius: BorderRadius.circular(30),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.hudGreen.withOpacity(0.5)),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: AppColors.hudGreen,
+                          size: 32,
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+              ),
+            ],
           );
         }),
       ),

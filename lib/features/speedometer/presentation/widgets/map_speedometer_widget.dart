@@ -9,14 +9,44 @@ import 'package:get/get.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../controllers/speedometer_controller.dart';
 
-class MapSpeedometerWidget extends StatelessWidget {
+class MapSpeedometerWidget extends StatefulWidget {
   const MapSpeedometerWidget({super.key, required this.controller});
   final SpeedometerController controller;
 
   @override
+  State<MapSpeedometerWidget> createState() => _MapSpeedometerWidgetState();
+}
+
+class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
+  late final MapController _mapController;
+  bool _isMapReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  void _recenterMap() {
+    if (!_isMapReady) return;
+    
+    final s = widget.controller.speedometer.value;
+    final lat = s.latitude ?? 23.8103;
+    final lon = s.longitude ?? 90.4125;
+    
+    _mapController.move(LatLng(lat, lon), _mapController.camera.zoom);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final s = controller.speedometer.value;
+      final s = widget.controller.speedometer.value;
       final lat = s.latitude ?? 23.8103;
       final lon = s.longitude ?? 90.4125;
       final center = LatLng(lat, lon);
@@ -25,11 +55,17 @@ class MapSpeedometerWidget extends StatelessWidget {
         children: [
           // OSM Map
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: center,
               initialZoom: 16,
+              onMapReady: () {
+                setState(() {
+                  _isMapReady = true;
+                });
+              },
               interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
+                 flags: InteractiveFlag.all,
               ),
             ),
             children: [
@@ -59,6 +95,23 @@ class MapSpeedometerWidget extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+
+          // Current Location FAB
+          Positioned(
+            top: 24,
+            right: 24,
+            child: SafeArea(
+              child: FloatingActionButton(
+                heroTag: 'map_recenter_fab',
+                onPressed: _recenterMap,
+                backgroundColor: AppColors.bgCard,
+                foregroundColor: AppColors.primary,
+                mini: true,
+                 elevation: 4,
+                child: const Icon(Icons.my_location),
+              ),
+            ),
           ),
 
           // Speed overlay card
