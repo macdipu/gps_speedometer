@@ -63,14 +63,6 @@ class DashcamScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Back button
-                    GestureDetector(
-                      onTap: Get.back,
-                      child: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 28),
-                    ),
-                    const SizedBox(width: 12),
-
                     // REC indicator or STANDBY
                     Obx(() => controller.isRecording.value
                         ? _RecIndicator(
@@ -209,7 +201,7 @@ class _LoopInfoCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
+          color: Colors.black.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white12),
         ),
@@ -385,7 +377,7 @@ class _BlinkingDotState extends State<_BlinkingDot>
         width: 10,
         height: 10,
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.4 + _anim.value * 0.6),
+          color: Colors.red.withValues(alpha: 0.4 + _anim.value * 0.6),
           shape: BoxShape.circle,
         ),
       ),
@@ -403,7 +395,7 @@ class _PillBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.8),
+        color: color.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -427,9 +419,9 @@ class _SpeedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.6),
+        color: Colors.black.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.35)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -476,8 +468,8 @@ class _LockButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: locked
-                ? Colors.amber.withOpacity(0.2)
-                : Colors.white.withOpacity(0.1),
+                ? Colors.amber.withValues(alpha: 0.2)
+                : Colors.white.withValues(alpha: 0.1),
             border: Border.all(
               color: locked ? Colors.amber : Colors.white38,
               width: 2,
@@ -552,7 +544,7 @@ class _RecordButtonState extends State<_RecordButton>
                 boxShadow: [
                   if (widget.isRecording)
                     BoxShadow(
-                      color: Colors.red.withOpacity(_anim.value * 0.6),
+                      color: Colors.red.withValues(alpha: _anim.value * 0.6),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
