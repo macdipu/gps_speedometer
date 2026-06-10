@@ -41,25 +41,22 @@ class TripRecordingScreen extends StatelessWidget {
             ? controller.maxSpeed.value
             : GpsUtils.kmhToMph(controller.maxSpeed.value);
 
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-
-              _RecordButton(
-                isRecording: recording,
-                onTap: recording ? controller.stopTrip : controller.startTrip,
-              ),
-
-              const SizedBox(height: 48),
-
-              if (recording) ...[
+        if (recording) {
+          // ── Active recording layout ─────────────────────────────────
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              children: [
+                _RecordButton(
+                  isRecording: true,
+                  onTap: controller.stopTrip,
+                ),
+                const SizedBox(height: 24),
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
                   childAspectRatio: 1.6,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
@@ -91,34 +88,37 @@ class TripRecordingScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 24),
-
+                const SizedBox(height: 16),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: _LiveTripMap(controller: controller),
                   ),
                 ),
-              ] else ...[
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_circle_outline,
-                          size: 80,
-                          color: context.textDisabledColor),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Press START to begin recording\nyour trip',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: context.textSecondaryColor, fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
               ],
+            ),
+          );
+        }
+
+        // ── Idle layout — button + hint centered ───────────────────────
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _RecordButton(
+                isRecording: false,
+                onTap: controller.startTrip,
+              ),
+              const SizedBox(height: 32),
+              Icon(Icons.route_outlined,
+                  size: 48, color: context.textDisabledColor),
+              const SizedBox(height: 12),
+              Text(
+                'Press START to begin recording\nyour trip',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: context.textSecondaryColor, fontSize: 16),
+              ),
             ],
           ),
         );
