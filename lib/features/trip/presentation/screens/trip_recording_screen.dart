@@ -20,13 +20,12 @@ class TripRecordingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text('Trip Recording'),
+        title: Text('trip_recording'.tr),
         actions: [
           IconButton(
-            icon: const Icon(Icons.videocam, color: AppColors.primary),
-            tooltip: 'Dashcam',
+            icon: Icon(Icons.videocam, color: context.primaryColor),
+            tooltip: 'dashcam'.tr,
             onPressed: () => Get.toNamed('/dashcam'),
           ),
         ],
@@ -106,15 +105,15 @@ class TripRecordingScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.play_circle_outline,
+                      Icon(Icons.play_circle_outline,
                           size: 80,
-                          color: AppColors.textDisabled),
+                          color: context.textDisabledColor),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Press START to begin recording\nyour trip',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 16),
+                            color: context.textSecondaryColor, fontSize: 16),
                       ),
                     ],
                   ),
@@ -350,7 +349,7 @@ class _LiveStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -371,8 +370,8 @@ class _LiveStatCard extends StatelessWidget {
             ],
           ),
           Text(value,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: context.textPrimaryColor,
                   fontSize: 18,
                   fontWeight: FontWeight.w700)),
         ],

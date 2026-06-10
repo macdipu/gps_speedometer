@@ -1,5 +1,4 @@
 /// HomeShell — Bottom navigation shell that hosts the main feature tabs.
-/// Architecture: persistent tab state using GetX IndexedStack approach.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,7 +9,6 @@ import 'package:gps_speedometer/features/trip/presentation/screens/trip_recordin
 import 'package:gps_speedometer/features/trip/presentation/screens/trip_history_screen.dart';
 import 'package:gps_speedometer/features/trip/presentation/controllers/trip_controller.dart';
 import 'package:gps_speedometer/features/settings/presentation/screens/settings_screen.dart';
-import 'package:gps_speedometer/features/settings/presentation/controllers/settings_controller.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -22,19 +20,17 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
 
-  // Initialize controllers for each tab
   @override
   void initState() {
     super.initState();
+    // SettingsController is already registered in main.dart — do not re-register.
     Get.put(SpeedometerController());
     Get.put(TripController());
-    Get.put(SettingsController());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -45,42 +41,34 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.bgCardLight, width: 1),
+            top: BorderSide(color: context.cardBorderColor, width: 1),
           ),
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex,
           onDestinationSelected: (i) => setState(() => _currentIndex = i),
-          backgroundColor: AppColors.bgCard,
-          indicatorColor: AppColors.primary.withOpacity(0.15),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.speed, color: AppColors.textSecondary),
-              selectedIcon:
-                  Icon(Icons.speed, color: AppColors.primary),
+              icon: Icon(Icons.speed_outlined),
+              selectedIcon: Icon(Icons.speed),
               label: 'Speed',
             ),
             NavigationDestination(
-              icon: Icon(Icons.fiber_manual_record_outlined,
-                  color: AppColors.textSecondary),
-              selectedIcon: Icon(Icons.fiber_manual_record,
-                  color: AppColors.error),
+              icon: Icon(Icons.fiber_manual_record_outlined),
+              selectedIcon: Icon(Icons.fiber_manual_record),
               label: 'Record',
             ),
             NavigationDestination(
-              icon: Icon(Icons.history, color: AppColors.textSecondary),
-              selectedIcon:
-                  Icon(Icons.history, color: AppColors.primary),
+              icon: Icon(Icons.history),
+              selectedIcon: Icon(Icons.history),
               label: 'Trips',
             ),
             NavigationDestination(
-              icon: Icon(Icons.settings_outlined,
-                  color: AppColors.textSecondary),
-              selectedIcon:
-                  Icon(Icons.settings, color: AppColors.primary),
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
               label: 'Settings',
             ),
           ],

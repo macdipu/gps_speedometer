@@ -17,7 +17,6 @@ class SpeedAlertService {
   final _tts = FlutterTts();
   DateTime? _lastAlertTime;
 
-  // Minimum seconds between repeated spoken alerts
   static const int _cooldownSeconds = 10;
 
   bool _initialized = false;
@@ -32,33 +31,31 @@ class SpeedAlertService {
   }
 
   /// Call on every GPS position update.
-  /// [speedKmh] — current speed in km/h
+  /// [speedKmh] — current speed in km/h (always km/h, regardless of display unit).
   Future<void> checkSpeed(double speedKmh) async {
     final settings = Get.find<SettingsController>();
     if (!settings.speedAlertEnabled.value) return;
 
     final limitKmh = settings.speedLimitKmh.value;
 
-    // Convert to mph if that's the active unit
-    final displaySpeed = settings.speedUnit.value == SpeedUnit.kmh
-        ? speedKmh
-        : GpsUtils.kmhToMph(speedKmh);
-
-    if (displaySpeed > limitKmh) {
+    // Compare both in km/h — limitKmh is always stored in km/h
+    if (speedKmh > limitKmh) {
       final now = DateTime.now();
       if (_lastAlertTime == null ||
           now.difference(_lastAlertTime!).inSeconds >= _cooldownSeconds) {
         _lastAlertTime = now;
         await init();
-        final unit = settings.speedUnit.value == SpeedUnit.kmh ? 'km/h' : 'mph';
+        // Announce in user's display unit
+        final unit = settings.speedUnit.value;
+        final displaySpeed = unit == SpeedUnit.kmh ? speedKmh : GpsUtils.kmhToMph(speedKmh);
+        final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
         final msg =
-            'Speed limit exceeded. You are going ${displaySpeed.toStringAsFixed(0)} $unit.';
+            'Speed limit exceeded. You are going ${displaySpeed.toStringAsFixed(0)} $unitLabel.';
         await _tts.speak(msg);
       }
     }
   }
 
-  /// Convert km/h to mph helper
   Future<void> dispose() async {
     await _tts.stop();
   }

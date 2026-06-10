@@ -123,7 +123,6 @@ class GpxUtils {
         points: points,
       );
     } catch (e) {
-      print('Failed to parse GPX: $e');
       return null;
     }
   }

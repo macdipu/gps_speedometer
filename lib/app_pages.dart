@@ -41,7 +41,6 @@ class AppPages {
     GetPage(
       name: Routes.home,
       page: () => const HomeShell(),
-      binding: AppBinding(),
     ),
     GetPage(
       name: Routes.speedometer,

@@ -6,12 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/gps_utils.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../controllers/dashcam_controller.dart';
 
 class DashcamScreen extends StatelessWidget {
   DashcamScreen({super.key});
 
-  final DashcamController controller = Get.put(DashcamController());
+  final DashcamController controller = Get.find<DashcamController>();
+  final SettingsController settings = Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,8 @@ class DashcamScreen extends StatelessWidget {
         children: [
           // 1. Camera Preview Layer
           Obx(() {
-            if (!controller.isInitialized.value || controller.cameraController == null) {
+            if (!controller.isInitialized.value ||
+                controller.cameraController == null) {
               return const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               );
@@ -39,8 +43,13 @@ class DashcamScreen extends StatelessWidget {
             right: 20,
             child: Obx(() {
               final tripCtrl = controller.tripController;
-              final speed = tripCtrl.currentSpeed.value.toStringAsFixed(0);
-              
+              final unit = settings.speedUnit.value;
+              final speedKmh = tripCtrl.currentSpeed.value;
+              final dispSpeed = unit == SpeedUnit.kmh
+                  ? speedKmh
+                  : GpsUtils.kmhToMph(speedKmh);
+              final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -63,7 +72,9 @@ class DashcamScreen extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                            shadows: [
+                              Shadow(color: Colors.black, blurRadius: 4)
+                            ],
                           ),
                         ),
                       ],
@@ -77,14 +88,14 @@ class DashcamScreen extends StatelessWidget {
                         shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                       ),
                     ),
-                  
+
                   // Speed Overlay
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        speed,
+                        dispSpeed.toStringAsFixed(0),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: 48,
@@ -92,9 +103,9 @@ class DashcamScreen extends StatelessWidget {
                           shadows: [Shadow(color: Colors.black, blurRadius: 8)],
                         ),
                       ),
-                      const Text(
-                        'km/h',
-                        style: TextStyle(
+                      Text(
+                        unitLabel,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -107,7 +118,7 @@ class DashcamScreen extends StatelessWidget {
               );
             }),
           ),
-          
+
           // 3. UI Controls
           Positioned(
             top: 50,
@@ -117,7 +128,7 @@ class DashcamScreen extends StatelessWidget {
               onPressed: () => Get.back(),
             ),
           ),
-          
+
           Positioned(
             bottom: 40,
             left: 0,
@@ -137,9 +148,14 @@ class DashcamScreen extends StatelessWidget {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: isRecording ? AppColors.error : AppColors.primary,
-                        shape: isRecording ? BoxShape.rectangle : BoxShape.circle,
-                        borderRadius: isRecording ? BorderRadius.circular(8) : null,
+                        color: isRecording
+                            ? AppColors.error
+                            : AppColors.primary,
+                        shape: isRecording
+                            ? BoxShape.rectangle
+                            : BoxShape.circle,
+                        borderRadius:
+                            isRecording ? BorderRadius.circular(8) : null,
                       ),
                     ),
                   ),

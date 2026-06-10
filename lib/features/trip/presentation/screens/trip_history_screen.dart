@@ -1,4 +1,4 @@
-/// TripHistoryScreen — shows list of all recorded trips with summary cards.
+/// TripHistoryScreen — list of all recorded trips with summary cards.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,14 +20,14 @@ class TripHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         title: Text('trips'.tr),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_upload, color: AppColors.primary),
+            icon: Icon(Icons.file_upload_outlined,
+                color: context.primaryColor),
             onPressed: controller.importGpx,
-            tooltip: 'Import GPX',
+            tooltip: 'import_gpx'.tr,
           ),
         ],
       ),
@@ -38,18 +38,21 @@ class TripHistoryScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.route, size: 72, color: AppColors.textDisabled),
+                Icon(Icons.route,
+                    size: 72, color: context.textDisabledColor),
                 const SizedBox(height: 16),
                 Text(
                   'no_trips'.tr,
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 16),
+                  style: TextStyle(
+                      color: context.textSecondaryColor,
+                      fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Go to the Trip tab and press START',
+                Text(
+                  'Go to the Record tab and press START',
                   style: TextStyle(
-                      color: AppColors.textDisabled, fontSize: 13),
+                      color: context.textDisabledColor,
+                      fontSize: 13),
                 ),
               ],
             ),
@@ -83,24 +86,25 @@ class TripHistoryScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        title: const Text('Delete Trip',
-            style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text('This action cannot be undone.',
-            style: TextStyle(color: AppColors.textSecondary)),
+        backgroundColor: context.cardColor,
+        title: Text('delete_trip'.tr,
+            style: TextStyle(color: context.textPrimaryColor)),
+        content: Text('cannot_undo'.tr,
+            style: TextStyle(color: context.textSecondaryColor)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('cancel'.tr,
+                style:
+                    TextStyle(color: context.textSecondaryColor)),
           ),
           TextButton(
             onPressed: () {
               controller.deleteTrip(trip.id!);
               Navigator.pop(context);
             },
-            child: const Text('DELETE',
-                style: TextStyle(color: AppColors.error)),
+            child: Text('delete'.tr,
+                style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -123,14 +127,22 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+    final avg = unit == SpeedUnit.kmh
+        ? trip.avgSpeedKmh
+        : GpsUtils.kmhToMph(trip.avgSpeedKmh);
+    final max = unit == SpeedUnit.kmh
+        ? trip.maxSpeedKmh
+        : GpsUtils.kmhToMph(trip.maxSpeedKmh);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.bgCardLight),
+          border: Border.all(color: context.cardBorderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,16 +152,16 @@ class _TripCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     trip.title ?? Formatters.dateTime(trip.startTime),
-                    style: const TextStyle(
-                        color: AppColors.textPrimary,
+                    style: TextStyle(
+                        color: context.textPrimaryColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(
                   onPressed: onAnalyze,
-                  icon: const Icon(Icons.bar_chart,
-                      color: AppColors.primary, size: 20),
+                  icon: Icon(Icons.bar_chart,
+                      color: context.primaryColor, size: 20),
                   tooltip: 'Analyze',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -166,32 +178,27 @@ class _TripCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Builder(builder: (_) {
-              final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
-              final avg = unit == SpeedUnit.kmh
-                  ? trip.avgSpeedKmh
-                  : GpsUtils.kmhToMph(trip.avgSpeedKmh);
-              final max = unit == SpeedUnit.kmh
-                  ? trip.maxSpeedKmh
-                  : GpsUtils.kmhToMph(trip.maxSpeedKmh);
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _TripStat(
-                      icon: Icons.route,
-                      label: Formatters.distance(trip.distanceMeters)),
-                  _TripStat(
-                      icon: Icons.speed,
-                      label: '${avg.toStringAsFixed(1)} $unitLabel avg'),
-                  _TripStat(
-                      icon: Icons.flash_on,
-                      label: '${max.toStringAsFixed(1)} $unitLabel max'),
-                  _TripStat(
-                      icon: Icons.timer,
-                      label: Formatters.durationShort(trip.duration)),
-                ],
-              );
-            }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _TripStat(
+                    icon: Icons.route,
+                    label: Formatters.distance(trip.distanceMeters),
+                    context: context),
+                _TripStat(
+                    icon: Icons.speed,
+                    label: '${avg.toStringAsFixed(1)} $unitLabel avg',
+                    context: context),
+                _TripStat(
+                    icon: Icons.flash_on,
+                    label: '${max.toStringAsFixed(1)} $unitLabel max',
+                    context: context),
+                _TripStat(
+                    icon: Icons.timer,
+                    label: Formatters.durationShort(trip.duration),
+                    context: context),
+              ],
+            ),
           ],
         ),
       ),
@@ -200,19 +207,25 @@ class _TripCard extends StatelessWidget {
 }
 
 class _TripStat extends StatelessWidget {
-  const _TripStat({required this.icon, required this.label});
+  const _TripStat({
+    required this.icon,
+    required this.label,
+    required this.context,
+  });
   final IconData icon;
   final String label;
+  // ignore: unused_field
+  final BuildContext context;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext ctx) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
+        Icon(icon, size: 14, color: ctx.textSecondaryColor),
         const SizedBox(width: 4),
         Text(label,
-            style: const TextStyle(
-                color: AppColors.textSecondary, fontSize: 12)),
+            style: TextStyle(
+                color: ctx.textSecondaryColor, fontSize: 12)),
       ],
     );
   }

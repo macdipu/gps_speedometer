@@ -1,12 +1,13 @@
 /// SpeedometerController — GetX Controller
 /// Manages real-time GPS speed tracking, unit switching, and session max-speed.
-/// Follows Presentation layer of the Speedometer feature.
+/// Unit is kept in sync with SettingsController as the single source of truth.
 
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/utils/gps_utils.dart';
+import '../../../../features/settings/presentation/controllers/settings_controller.dart';
 import '../../domain/entities/speedometer_entity.dart';
 import '../../data/repositories/speedometer_repository_impl.dart';
 
@@ -20,21 +21,12 @@ class SpeedometerController extends GetxController {
   // Reactive state
   // --------------------------------------------------------------------------
 
-  /// Current speedometer entity (speed, unit, heading, etc.)
   final speedometer = SpeedometerEntity.empty().obs;
-
-  /// Active view mode
   final mode = SpeedometerMode.digital.obs;
-
-  /// Whether GPS is currently connected
   final isConnected = false.obs;
-
-  /// Error message if GPS fails
   final errorMessage = RxnString();
 
-  /// Session max speed in display unit
   double _sessionMaxSpeed = 0.0;
-
   StreamSubscription<Position>? _positionSub;
 
   // --------------------------------------------------------------------------
@@ -44,6 +36,7 @@ class SpeedometerController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _syncWithSettings();
     _startTracking();
   }
 
@@ -57,15 +50,33 @@ class SpeedometerController extends GetxController {
   // Public methods
   // --------------------------------------------------------------------------
 
+  /// Toggle unit — updates SettingsController (single source of truth),
+  /// which triggers the ever() listener to update the speedometer entity.
   void switchUnit() {
-    final newUnit = speedometer.value.unit == SpeedUnit.kmh
-        ? SpeedUnit.mph
-        : SpeedUnit.kmh;
-    _sessionMaxSpeed = 0; // Reset max when switching units
-    speedometer.value = speedometer.value.copyWith(unit: newUnit, maxSpeed: 0);
+    final settings = Get.find<SettingsController>();
+    final newUnit =
+        speedometer.value.unit == SpeedUnit.kmh ? SpeedUnit.mph : SpeedUnit.kmh;
+    settings.setSpeedUnit(newUnit);
   }
 
   void setMode(SpeedometerMode m) => mode.value = m;
+
+  // --------------------------------------------------------------------------
+  // Private: settings sync
+  // --------------------------------------------------------------------------
+
+  void _syncWithSettings() {
+    final settings = Get.find<SettingsController>();
+
+    // Set initial unit from persisted settings
+    speedometer.value = speedometer.value.copyWith(unit: settings.speedUnit.value);
+
+    // React to unit changes (from Settings screen or Speedometer toggle)
+    ever(settings.speedUnit, (SpeedUnit newUnit) {
+      _sessionMaxSpeed = 0;
+      speedometer.value = speedometer.value.copyWith(unit: newUnit, maxSpeed: 0);
+    });
+  }
 
   // --------------------------------------------------------------------------
   // Private: GPS stream

@@ -11,6 +11,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/gpx_utils.dart';
+import '../../../../core/utils/gps_utils.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../controllers/trip_controller.dart';
 
@@ -23,6 +25,8 @@ class TripDetailsScreen extends StatefulWidget {
 
 class _TripDetailsScreenState extends State<TripDetailsScreen> {
   final controller = Get.find<TripController>();
+  final settings = Get.find<SettingsController>();
+
   TripEntity? trip;
   bool loading = true;
 
@@ -61,13 +65,13 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     try {
       final xmlString = GpxUtils.generateGpx(trip!);
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/trip_${trip!.startTime.millisecondsSinceEpoch}.gpx';
+      final path =
+          '${dir.path}/trip_${trip!.startTime.millisecondsSinceEpoch}.gpx';
       final file = File(path);
       await file.writeAsString(xmlString);
-
       await Share.shareXFiles([XFile(path)], subject: 'GPX Export - Trip');
     } catch (e) {
-      Get.snackbar('Export Failed', 'Error creating GPX: $e', 
+      Get.snackbar('export_failed'.tr, e.toString(),
           snackPosition: SnackPosition.BOTTOM);
     }
   }
@@ -75,45 +79,40 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(
-        backgroundColor: AppColors.bgDark,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return Scaffold(
+        body: Center(
+            child: CircularProgressIndicator(color: context.primaryColor)),
       );
     }
 
     if (trip == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.bgDark,
+      return Scaffold(
         body: Center(
             child: Text('Trip not found',
-                style: TextStyle(color: AppColors.textSecondary))),
+                style: TextStyle(color: context.textSecondaryColor))),
       );
     }
 
     final points = trip!.points;
-    final latLngs = points
-        .map((p) => LatLng(p.latitude, p.longitude))
-        .toList();
-
-    final center = latLngs.isNotEmpty
-        ? latLngs[_playbackIdx]
-        : LatLng(23.8103, 90.4125);
+    final latLngs = points.map((p) => LatLng(p.latitude, p.longitude)).toList();
+    final center =
+        latLngs.isNotEmpty ? latLngs[_playbackIdx] : const LatLng(0, 0);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
         title: Text(trip!.title ?? 'Trip Details'),
         actions: [
-          if (trip != null)
-            IconButton(
-              icon: const Icon(Icons.download, color: AppColors.primary),
-              onPressed: _exportGpx,
-              tooltip: 'Export GPX',
-            ),
+          IconButton(
+            icon: Icon(Icons.download, color: context.primaryColor),
+            onPressed: _exportGpx,
+            tooltip: 'export_gpx'.tr,
+          ),
           if (points.isNotEmpty)
             IconButton(
-              icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: AppColors.primary),
+              icon: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: context.primaryColor,
+              ),
               onPressed: _togglePlayback,
               tooltip: 'Playback route',
             ),
@@ -140,7 +139,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     polylines: [
                       Polyline(
                         points: latLngs,
-                        color: AppColors.primary,
+                        color: context.primaryColor,
                         strokeWidth: 3.5,
                       ),
                     ],
@@ -148,7 +147,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 if (latLngs.isNotEmpty)
                   MarkerLayer(
                     markers: [
-                      // Start marker
                       Marker(
                         point: latLngs.first,
                         width: 28,
@@ -156,7 +154,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                         child: const Icon(Icons.circle,
                             color: AppColors.success, size: 20),
                       ),
-                      // Playback position
                       Marker(
                         point: latLngs[_playbackIdx],
                         width: 32,
@@ -164,7 +161,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                         child: const Icon(Icons.navigation,
                             color: AppColors.accent, size: 28),
                       ),
-                      // End marker
                       Marker(
                         point: latLngs.last,
                         width: 28,
@@ -184,24 +180,36 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _statRow('Start', Formatters.dateTime(trip!.startTime)),
+                  _statRow(context, 'Start',
+                      Formatters.dateTime(trip!.startTime)),
                   _statRow(
+                      context,
                       'End',
                       trip!.endTime != null
                           ? Formatters.dateTime(trip!.endTime!)
                           : '—'),
-                  _statRow(
-                      'Duration', Formatters.duration(trip!.duration)),
-                  _statRow(
-                      'Distance',
+                  _statRow(context, 'Duration',
+                      Formatters.duration(trip!.duration)),
+                  _statRow(context, 'Distance',
                       Formatters.distance(trip!.distanceMeters)),
-                  _statRow(
-                      'Avg Speed',
-                      '${trip!.avgSpeedKmh.toStringAsFixed(1)} km/h'),
-                  _statRow(
-                      'Max Speed',
-                      '${trip!.maxSpeedKmh.toStringAsFixed(1)} km/h'),
-                  _statRow('GPS Points', '${points.length}'),
+                  // Speed stats: reactive to unit changes
+                  Obx(() {
+                    final unit = settings.speedUnit.value;
+                    final label = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+                    final avg = unit == SpeedUnit.kmh
+                        ? trip!.avgSpeedKmh
+                        : GpsUtils.kmhToMph(trip!.avgSpeedKmh);
+                    final max = unit == SpeedUnit.kmh
+                        ? trip!.maxSpeedKmh
+                        : GpsUtils.kmhToMph(trip!.maxSpeedKmh);
+                    return Column(children: [
+                      _statRow(context, 'Avg Speed',
+                          '${avg.toStringAsFixed(1)} $label'),
+                      _statRow(context, 'Max Speed',
+                          '${max.toStringAsFixed(1)} $label'),
+                    ]);
+                  }),
+                  _statRow(context, 'GPS Points', '${points.length}'),
                 ],
               ),
             ),
@@ -211,18 +219,18 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     );
   }
 
-  Widget _statRow(String label, String value) {
+  Widget _statRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Text(label,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 14)),
+              style: TextStyle(
+                  color: context.textSecondaryColor, fontSize: 14)),
           const Spacer(),
           Text(value,
-              style: const TextStyle(
-                  color: AppColors.textPrimary,
+              style: TextStyle(
+                  color: context.textPrimaryColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600)),
         ],

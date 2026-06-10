@@ -1,5 +1,4 @@
-/// Digital Speed Widget — displays current speed as a large numeric display
-/// with animated pulse on speed change.
+/// Digital Speed Widget — large numeric display with animated speed bar.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,9 +18,11 @@ class DigitalSpeedWidget extends StatelessWidget {
       final speed = s.displaySpeed;
 
       return Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
-            colors: [Color(0xFF1A2035), AppColors.bgDark],
+            colors: context.isDark
+                ? [const Color(0xFF1A2035), AppColors.bgDark]
+                : [const Color(0xFFEBF4F0), AppColors.bgLight],
             radius: 1.2,
           ),
         ),
@@ -29,14 +30,13 @@ class DigitalSpeedWidget extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Speed value
               TweenAnimationBuilder<double>(
                 tween: Tween(end: speed),
                 duration: const Duration(milliseconds: 300),
                 builder: (_, val, __) => Text(
                   val.toStringAsFixed(0),
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: context.primaryColor,
                     fontSize: 96,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -4,
@@ -44,22 +44,20 @@ class DigitalSpeedWidget extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Unit label
               Text(
                 s.unitLabel.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.textSecondaryColor,
                   fontSize: 18,
                   letterSpacing: 6,
                   fontWeight: FontWeight.w400,
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // Speed bar
-              _SpeedBar(speed: speed, maxDisplay: s.unit == SpeedUnit.kmh ? 220 : 140),
+              _SpeedBar(
+                speed: speed,
+                maxDisplay: s.unit == SpeedUnit.kmh ? 220 : 140,
+              ),
             ],
           ),
         ),
@@ -94,7 +92,7 @@ class _SpeedBar extends StatelessWidget {
               builder: (_, val, __) => LinearProgressIndicator(
                 value: val,
                 minHeight: 8,
-                backgroundColor: AppColors.gaugeRing,
+                backgroundColor: context.cardBorderColor,
                 valueColor: AlwaysStoppedAnimation(color),
               ),
             ),
@@ -103,12 +101,12 @@ class _SpeedBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('0',
+              Text('0',
                   style: TextStyle(
-                      color: AppColors.textDisabled, fontSize: 11)),
+                      color: context.textDisabledColor, fontSize: 11)),
               Text('${maxDisplay.toInt()}',
-                  style: const TextStyle(
-                      color: AppColors.textDisabled, fontSize: 11)),
+                  style: TextStyle(
+                      color: context.textDisabledColor, fontSize: 11)),
             ],
           ),
         ],

@@ -68,7 +68,8 @@ class BackgroundLocationService {
     service.invoke('stopService');
   }
 
-  bool get isRunning => false; // Use stream-based check if needed
+  /// Returns whether the background service is currently running.
+  Future<bool> get isRunning => FlutterBackgroundService().isRunning();
 
   // --------------------------------------------------------------------------
   // Background isolate entry point (runs in separate isolate)
@@ -115,7 +116,7 @@ class BackgroundLocationService {
       if (service is AndroidServiceInstance) {
         service.setForegroundNotificationInfo(
           title: 'GPS Speedometer — Recording',
-          content: '🚗 ${speedKmh.toStringAsFixed(1)} km/h',
+          content: '${speedKmh.toStringAsFixed(1)} km/h',
         );
       }
     });

@@ -15,7 +15,6 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
       appBar: AppBar(title: Text('settings'.tr)),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -53,12 +52,11 @@ class SettingsScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('dark_mode'.tr,
-                        style:
-                            const TextStyle(color: AppColors.textPrimary)),
+                        style: TextStyle(color: context.textPrimaryColor)),
                     Switch(
                       value: controller.isDarkMode.value,
                       onChanged: (_) => controller.toggleTheme(),
-                      activeColor: AppColors.primary,
+                      activeColor: context.primaryColor,
                     ),
                   ],
                 )),
@@ -66,38 +64,39 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ── Phase 7: Speed Limit Alerts ──────────────────────────────────
+          // Speed Limit Alert
           _SettingsSection(
-            title: 'Speed Limit Alert',
+            title: 'speed_limit_alert'.tr,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Toggle row
                 Obx(() => Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Enable audio alert',
-                              style: TextStyle(color: AppColors.textPrimary),
+                            Text(
+                              'enable_alert'.tr,
+                              style: TextStyle(
+                                  color: context.textPrimaryColor),
                             ),
                             const SizedBox(height: 2),
-                            Obx(() => Text(
-                                  controller.speedAlertEnabled.value
-                                      ? 'Speaks when you exceed the limit'
-                                      : 'Alert is off',
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 11,
-                                  ),
-                                )),
+                            Text(
+                              controller.speedAlertEnabled.value
+                                  ? 'alert_on'.tr
+                                  : 'alert_off'.tr,
+                              style: TextStyle(
+                                color: context.textSecondaryColor,
+                                fontSize: 11,
+                              ),
+                            ),
                           ],
                         ),
                         Switch(
                           value: controller.speedAlertEnabled.value,
-                          onChanged: (_) => controller.toggleSpeedAlert(),
+                          onChanged: (_) =>
+                              controller.toggleSpeedAlert(),
                           activeColor: AppColors.accent,
                         ),
                       ],
@@ -105,18 +104,18 @@ class SettingsScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Speed limit slider
                 Obx(() {
-                  final isKmh = controller.speedUnit.value == SpeedUnit.kmh;
+                  final isKmh =
+                      controller.speedUnit.value == SpeedUnit.kmh;
                   final limitKmh = controller.speedLimitKmh.value;
-                  // Display in user's preferred unit
                   final displayLimit =
                       isKmh ? limitKmh : GpsUtils.kmhToMph(limitKmh);
                   final unit = isKmh ? 'km/h' : 'mph';
                   final minVal = isKmh ? 20.0 : 10.0;
                   final maxVal = isKmh ? 200.0 : 125.0;
-                  final displayClamped =
+                  final clamped =
                       displayLimit.clamp(minVal, maxVal);
+                  final enabled = controller.speedAlertEnabled.value;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,9 +125,9 @@ class SettingsScreen extends StatelessWidget {
                             MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Speed limit',
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            'speed_limit'.tr,
+                            style: TextStyle(
+                              color: context.textSecondaryColor,
                               fontSize: 13,
                             ),
                           ),
@@ -136,23 +135,25 @@ class SettingsScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: controller.speedAlertEnabled.value
+                              color: enabled
                                   ? AppColors.accent.withOpacity(0.15)
-                                  : AppColors.bgCard,
-                              borderRadius: BorderRadius.circular(12),
+                                  : context.cardBorderColor
+                                      .withOpacity(0.5),
+                              borderRadius:
+                                  BorderRadius.circular(12),
                               border: Border.all(
-                                color: controller.speedAlertEnabled.value
+                                color: enabled
                                     ? AppColors.accent
-                                    : AppColors.textDisabled,
+                                    : context.textDisabledColor,
                                 width: 1,
                               ),
                             ),
                             child: Text(
-                              '${displayClamped.toStringAsFixed(0)} $unit',
+                              '${clamped.toStringAsFixed(0)} $unit',
                               style: TextStyle(
-                                color: controller.speedAlertEnabled.value
+                                color: enabled
                                     ? AppColors.accent
-                                    : AppColors.textSecondary,
+                                    : context.textSecondaryColor,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,
                               ),
@@ -161,18 +162,17 @@ class SettingsScreen extends StatelessWidget {
                         ],
                       ),
                       Slider(
-                        value: displayClamped,
+                        value: clamped,
                         min: minVal,
                         max: maxVal,
                         divisions: isKmh ? 36 : 23,
-                        activeColor: controller.speedAlertEnabled.value
+                        activeColor: enabled
                             ? AppColors.accent
-                            : AppColors.textDisabled,
+                            : context.textDisabledColor,
                         inactiveColor:
-                            AppColors.textDisabled.withOpacity(0.3),
-                        onChanged: controller.speedAlertEnabled.value
+                            context.textDisabledColor.withOpacity(0.3),
+                        onChanged: enabled
                             ? (val) {
-                                // Convert back to km/h if user picked mph
                                 final kmh = isKmh
                                     ? val
                                     : GpsUtils.mphToKmh(val);
@@ -191,16 +191,18 @@ class SettingsScreen extends StatelessWidget {
 
           // Language
           _SettingsSection(
-            title: '${'language'.tr} (${SettingsController.supportedLocales.length}+)',
+            title:
+                '${'language'.tr} (${SettingsController.supportedLocales.length})',
             child: Obx(() => Column(
                   children: SettingsController.supportedLocales
                       .map((l) => _LanguageTile(
                             code: l['code'] as String,
                             label: l['label'] as String,
-                            selected: controller.locale.value.languageCode ==
-                                l['code'],
-                            onTap: () => controller
-                                .setLocale(Locale(l['code'] as String)),
+                            selected:
+                                controller.locale.value.languageCode ==
+                                    l['code'],
+                            onTap: () => controller.setLocale(
+                                Locale(l['code'] as String)),
                           ))
                       .toList(),
                 )),
@@ -208,24 +210,27 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // About
-          const Center(
+          Center(
             child: Column(
               children: [
-                Icon(Icons.speed, color: AppColors.primary, size: 40),
-                SizedBox(height: 8),
+                Icon(Icons.speed,
+                    color: context.primaryColor, size: 40),
+                const SizedBox(height: 8),
                 Text('GPS Speedometer',
                     style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: context.textPrimaryColor,
                         fontWeight: FontWeight.w700,
                         fontSize: 16)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text('v1.0.0  •  chowdhuryelab',
                     style: TextStyle(
-                        color: AppColors.textDisabled, fontSize: 12)),
+                        color: context.textDisabledColor,
+                        fontSize: 12)),
               ],
             ),
           ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -242,15 +247,16 @@ class _SettingsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.bgCard,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.cardBorderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
-                  color: AppColors.textSecondary,
+              style: TextStyle(
+                  color: context.textSecondaryColor,
                   fontSize: 12,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w600)),
@@ -275,22 +281,25 @@ class _UnitChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withOpacity(0.15)
+              ? context.primaryColor.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.textDisabled,
+            color: selected
+                ? context.primaryColor
+                : context.textDisabledColor,
             width: 1.5,
           ),
         ),
         child: Text(label,
             style: TextStyle(
                 color: selected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                    ? context.primaryColor
+                    : context.textSecondaryColor,
                 fontWeight: FontWeight.w700)),
       ),
     );
@@ -315,17 +324,17 @@ class _LanguageTile extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
       leading: Text(code.toUpperCase(),
-          style: const TextStyle(
-              color: AppColors.textDisabled,
+          style: TextStyle(
+              color: context.textDisabledColor,
               fontSize: 11,
               fontFamily: 'monospace',
               letterSpacing: 1)),
       title: Text(label,
-          style: const TextStyle(
-              color: AppColors.textPrimary, fontSize: 14)),
+          style: TextStyle(
+              color: context.textPrimaryColor, fontSize: 14)),
       trailing: selected
-          ? const Icon(Icons.check_circle,
-              color: AppColors.primary, size: 20)
+          ? Icon(Icons.check_circle,
+              color: context.primaryColor, size: 20)
           : null,
     );
   }

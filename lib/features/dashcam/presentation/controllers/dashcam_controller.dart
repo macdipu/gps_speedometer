@@ -13,14 +13,12 @@ class DashcamController extends GetxController {
   CameraController? cameraController;
   final isInitialized = false.obs;
   final isRecording = false.obs;
-  
-  // Settings for loop recording
+
   final int chunkDurationMinutes = 3;
-  final int maxStorageMb = 500; // Keep last ~500MB of videos
-  
+  final int maxStorageMb = 500;
+
   Timer? _chunkTimer;
 
-  // Link to TripController to get live speed/location to overlay
   final TripController _tripController = Get.find<TripController>();
 
   TripController get tripController => _tripController;
@@ -43,7 +41,6 @@ class DashcamController extends GetxController {
       final cameras = await availableCameras();
       if (cameras.isEmpty) return;
 
-      // Select back camera
       final backCamera = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.back,
         orElse: () => cameras.first,
@@ -74,18 +71,15 @@ class DashcamController extends GetxController {
 
   Future<void> _startLoopRecording() async {
     if (cameraController == null) return;
-    
+
     try {
       await _manageStorageQuota();
-      
-      // We start the first chunk of recording
       await cameraController!.startVideoRecording();
       isRecording.value = true;
 
-      // Start the timer to cut the video into chunks
       _chunkTimer = Timer.periodic(
-        Duration(minutes: chunkDurationMinutes), 
-        (_) => _cycleVideoChunk()
+        Duration(minutes: chunkDurationMinutes),
+        (_) => _cycleVideoChunk(),
       );
     } catch (e) {
       Get.snackbar('Error', 'Failed to start dashcam: $e');
@@ -96,41 +90,32 @@ class DashcamController extends GetxController {
     if (!isRecording.value || cameraController == null) return;
 
     try {
-      // 1. Stop current chunk
       final file = await cameraController!.stopVideoRecording();
       await _saveVideoChunk(file);
-
-      // 2. Manage storage (delete old files if needed)
       await _manageStorageQuota();
-
-      // 3. Start next chunk
       await cameraController!.startVideoRecording();
     } catch (e) {
-      print('Failed to cycle dashcam video: $e');
-      _stopLoopRecording(); // Stop on error
+      await _stopLoopRecording();
     }
   }
 
   Future<void> _stopLoopRecording() async {
     isRecording.value = false;
     _chunkTimer?.cancel();
-    
+
     if (cameraController?.value.isRecordingVideo ?? false) {
       try {
         final file = await cameraController!.stopVideoRecording();
         await _saveVideoChunk(file);
-      } catch (e) {
-        print('Error stopping video recording: $e');
-      }
+      } catch (_) {}
     }
   }
 
   Future<void> _saveVideoChunk(XFile file) async {
     final dir = await _getDashcamDirectory();
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
+    final timestamp =
+        DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
     final newPath = '${dir.path}/dashcam_$timestamp.mp4';
-    
-    // Move the temp recording file to our persistent dashcam folder
     await File(file.path).rename(newPath);
   }
 
@@ -146,8 +131,6 @@ class DashcamController extends GetxController {
   Future<void> _manageStorageQuota() async {
     final dir = await _getDashcamDirectory();
     final files = dir.listSync().whereType<File>().toList();
-    
-    // Sort files by modified date (oldest first)
     files.sort((a, b) => a.lastModifiedSync().compareTo(b.lastModifiedSync()));
 
     int totalSize = 0;
@@ -156,13 +139,11 @@ class DashcamController extends GetxController {
     }
 
     final maxBytes = maxStorageMb * 1024 * 1024;
-    
-    // Delete oldest files until we are under the quota
+
     while (totalSize > maxBytes && files.isNotEmpty) {
-      final oldestFile = files.removeAt(0);
-      totalSize -= oldestFile.lengthSync();
-      oldestFile.deleteSync();
-      print('Dashcam: Deleted oldest file ${oldestFile.path} to free space');
+      final oldest = files.removeAt(0);
+      totalSize -= oldest.lengthSync();
+      oldest.deleteSync();
     }
   }
 }

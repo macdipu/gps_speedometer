@@ -20,23 +20,20 @@ class SpeedometerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // HUD mode uses a special full-screen overlay
       if (controller.mode.value == SpeedometerMode.hud) {
         return HudOverlayWidget(controller: controller);
       }
 
       return Scaffold(
-        backgroundColor: AppColors.bgDark,
         appBar: AppBar(
           title: Text('speedometer'.tr),
           actions: [
-            // Unit toggle button
             TextButton(
               onPressed: controller.switchUnit,
               child: Obx(() => Text(
                     controller.speedometer.value.unitLabel.toUpperCase(),
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: context.primaryColor,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
@@ -46,17 +43,12 @@ class SpeedometerScreen extends StatelessWidget {
         ),
         body: Column(
           children: [
-            // GPS status bar
             Obx(() => _GpsStatusBar(
                   isConnected: controller.isConnected.value,
                   accuracy: controller.speedometer.value.accuracy,
                   error: controller.errorMessage.value,
                 )),
-
-            // Mode tabs
             _ModeTabs(controller: controller),
-
-            // Speed display area
             Expanded(
               child: Obx(() {
                 switch (controller.mode.value) {
@@ -71,8 +63,6 @@ class SpeedometerScreen extends StatelessWidget {
                 }
               }),
             ),
-
-            // Bottom stats bar
             _StatsBar(controller: controller),
           ],
         ),
@@ -98,7 +88,7 @@ class _GpsStatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppColors.bgCard,
+      color: context.cardColor,
       child: Row(
         children: [
           Icon(
@@ -107,15 +97,18 @@ class _GpsStatusBar extends StatelessWidget {
             color: isConnected ? AppColors.primary : AppColors.error,
           ),
           const SizedBox(width: 6),
-          Text(
-            error != null
-                ? 'GPS Error: ${error!}'
-                : isConnected
-                    ? 'GPS Connected  •  ±${accuracy.toStringAsFixed(0)}m'
-                    : 'Connecting...',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
+          Expanded(
+            child: Text(
+              error != null
+                  ? 'GPS Error: $error'
+                  : isConnected
+                      ? 'GPS Connected  •  ±${accuracy.toStringAsFixed(0)}m'
+                      : 'Connecting…',
+              style: TextStyle(
+                color: context.textSecondaryColor,
+                fontSize: 12,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -133,14 +126,14 @@ class _ModeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final modes = [
-      (SpeedometerMode.digital, Icons.display_settings, 'Digital'),
+      (SpeedometerMode.digital, Icons.display_settings_outlined, 'Digital'),
       (SpeedometerMode.analog, Icons.speed, 'Analog'),
-      (SpeedometerMode.hud, Icons.remove_red_eye, 'HUD'),
-      (SpeedometerMode.map, Icons.map, 'Map'),
+      (SpeedometerMode.hud, Icons.remove_red_eye_outlined, 'HUD'),
+      (SpeedometerMode.map, Icons.map_outlined, 'Map'),
     ];
 
     return Container(
-      color: AppColors.bgCard,
+      color: context.cardColor,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -155,12 +148,12 @@ class _ModeTabs extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? AppColors.primary.withOpacity(0.15)
+                      ? context.primaryColor.withOpacity(0.12)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isActive
-                        ? AppColors.primary
+                        ? context.primaryColor
                         : Colors.transparent,
                     width: 1.5,
                   ),
@@ -170,8 +163,8 @@ class _ModeTabs extends StatelessWidget {
                     Icon(m.$2,
                         size: 16,
                         color: isActive
-                            ? AppColors.primary
-                            : AppColors.textSecondary),
+                            ? context.primaryColor
+                            : context.textSecondaryColor),
                     const SizedBox(width: 4),
                     Text(
                       m.$3,
@@ -179,8 +172,8 @@ class _ModeTabs extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isActive
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
+                            ? context.primaryColor
+                            : context.textSecondaryColor,
                       ),
                     ),
                   ],
@@ -205,9 +198,8 @@ class _StatsBar extends StatelessWidget {
     return Obx(() {
       final s = controller.speedometer.value;
       return Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        color: AppColors.bgCard,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        color: context.cardColor,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -224,10 +216,10 @@ class _StatsBar extends StatelessWidget {
               color: AppColors.info,
             ),
             _StatItem(
-              label: 'HEADING',
+              label: 'HDG',
               value: s.heading.toStringAsFixed(0),
               unit: '°',
-              color: AppColors.primary,
+              color: context.primaryColor,
             ),
           ],
         ),
@@ -253,8 +245,8 @@ class _StatItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label,
-            style: const TextStyle(
-                color: AppColors.textSecondary,
+            style: TextStyle(
+                color: context.textSecondaryColor,
                 fontSize: 11,
                 letterSpacing: 1.5)),
         const SizedBox(height: 4),
@@ -269,8 +261,8 @@ class _StatItem extends StatelessWidget {
                       fontWeight: FontWeight.w700)),
               TextSpan(
                   text: ' $unit',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary,
+                  style: TextStyle(
+                      color: context.textSecondaryColor,
                       fontSize: 12)),
             ],
           ),

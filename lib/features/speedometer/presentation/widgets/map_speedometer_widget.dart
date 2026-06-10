@@ -1,5 +1,4 @@
-/// Map Speedometer Widget — displays current position on OpenStreetMap
-/// with a speed overlay panel, using flutter_map.
+/// Map Speedometer Widget — current position on OpenStreetMap with speed overlay.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -35,11 +34,9 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
 
   void _recenterMap() {
     if (!_isMapReady) return;
-    
     final s = widget.controller.speedometer.value;
-    final lat = s.latitude ?? 23.8103;
-    final lon = s.longitude ?? 90.4125;
-    
+    final lat = s.latitude ?? 0.0;
+    final lon = s.longitude ?? 0.0;
     _mapController.move(LatLng(lat, lon), _mapController.camera.zoom);
   }
 
@@ -47,25 +44,20 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
   Widget build(BuildContext context) {
     return Obx(() {
       final s = widget.controller.speedometer.value;
-      final lat = s.latitude ?? 23.8103;
-      final lon = s.longitude ?? 90.4125;
+      final lat = s.latitude ?? 0.0;
+      final lon = s.longitude ?? 0.0;
       final center = LatLng(lat, lon);
 
       return Stack(
         children: [
-          // OSM Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: center,
               initialZoom: 16,
-              onMapReady: () {
-                setState(() {
-                  _isMapReady = true;
-                });
-              },
+              onMapReady: () => setState(() => _isMapReady = true),
               interactionOptions: const InteractionOptions(
-                 flags: InteractiveFlag.all,
+                flags: InteractiveFlag.all,
               ),
             ),
             children: [
@@ -82,11 +74,11 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
                     height: 40,
                     child: Transform.rotate(
                       angle: s.heading * 3.14159 / 180,
-                      child: const Icon(
+                      child: Icon(
                         Icons.navigation,
-                        color: AppColors.primary,
+                        color: context.primaryColor,
                         size: 36,
-                        shadows: [
+                        shadows: const [
                           Shadow(color: Colors.black54, blurRadius: 8)
                         ],
                       ),
@@ -97,7 +89,7 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
             ],
           ),
 
-          // Current Location FAB
+          // Recenter FAB
           Positioned(
             top: 24,
             right: 24,
@@ -105,10 +97,10 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
               child: FloatingActionButton(
                 heroTag: 'map_recenter_fab',
                 onPressed: _recenterMap,
-                backgroundColor: AppColors.bgCard,
-                foregroundColor: AppColors.primary,
+                backgroundColor: context.cardColor,
+                foregroundColor: context.primaryColor,
                 mini: true,
-                 elevation: 4,
+                elevation: 4,
                 child: const Icon(Icons.my_location),
               ),
             ),
@@ -124,26 +116,26 @@ class _MapSpeedometerWidgetState extends State<MapSpeedometerWidget> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 32, vertical: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard.withOpacity(0.9),
+                  color: context.cardColor.withOpacity(0.92),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                      color: AppColors.primary.withOpacity(0.3)),
+                      color: context.primaryColor.withOpacity(0.3)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       s.displaySpeed.toStringAsFixed(0),
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: context.primaryColor,
                         fontSize: 56,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     Text(
                       s.unitLabel.toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: context.textSecondaryColor,
                         fontSize: 14,
                         letterSpacing: 6,
                       ),
