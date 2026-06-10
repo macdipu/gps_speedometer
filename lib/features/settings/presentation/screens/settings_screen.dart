@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/gps_utils.dart';
 import '../controllers/settings_controller.dart';
+// LoopDuration is defined in settings_controller.dart
 
 class SettingsScreen extends StatelessWidget {
   SettingsScreen({super.key});
@@ -185,6 +186,37 @@ class SettingsScreen extends StatelessWidget {
                 }),
               ],
             ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Loop Recording
+          _SettingsSection(
+            title: 'loop_recording'.tr,
+            child: Obx(() => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'loop_recording_desc'.tr,
+                      style: TextStyle(
+                          color: context.textDisabledColor, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: LoopDuration.values
+                          .map((d) => _UnitChip(
+                                label: d.label,
+                                selected:
+                                    controller.loopDuration.value == d,
+                                onTap: () =>
+                                    controller.setLoopDuration(d),
+                              ))
+                          .toList(),
+                    ),
+                  ],
+                )),
           ),
 
           const SizedBox(height: 16),

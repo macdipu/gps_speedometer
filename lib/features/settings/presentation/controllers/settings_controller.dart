@@ -1,5 +1,5 @@
 /// SettingsController — GetX Controller
-/// Manages user preferences: speed unit, theme, language, speed alerts.
+/// Manages user preferences: speed unit, theme, language, speed alerts, loop recording.
 /// Persists settings using Shared Preferences.
 
 import 'package:get/get.dart';
@@ -7,6 +7,35 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/utils/gps_utils.dart';
+
+// ---------------------------------------------------------------------------
+// Loop Recording duration enum
+// ---------------------------------------------------------------------------
+
+enum LoopDuration { off, one, three, five, ten }
+
+extension LoopDurationX on LoopDuration {
+  int get minutes => const [0, 1, 3, 5, 10][index];
+
+  String get label {
+    switch (this) {
+      case LoopDuration.off:
+        return 'Off';
+      case LoopDuration.one:
+        return '1 min';
+      case LoopDuration.three:
+        return '3 min';
+      case LoopDuration.five:
+        return '5 min';
+      case LoopDuration.ten:
+        return '10 min';
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SettingsController
+// ---------------------------------------------------------------------------
 
 class SettingsController extends GetxController {
   late final SharedPreferences _prefs;
@@ -18,12 +47,10 @@ class SettingsController extends GetxController {
   final isDarkMode = true.obs;
   final locale = const Locale('en').obs;
 
-  // Speed Limit Alerts (Phase 7)
-  /// Whether the audio speed limit warning is active
   final speedAlertEnabled = false.obs;
-
-  /// Speed limit threshold in km/h (converted to mph in UI if user uses mph)
   final speedLimitKmh = 120.0.obs;
+
+  final loopDuration = LoopDuration.off.obs;
 
   @override
   void onInit() {
@@ -34,22 +61,22 @@ class SettingsController extends GetxController {
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
 
-    // Load speed unit
     final unitIndex = _prefs.getInt('speedUnit') ?? 0;
     speedUnit.value = SpeedUnit.values[unitIndex];
 
-    // Load theme
     isDarkMode.value = _prefs.getBool('isDarkMode') ?? true;
     Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
 
-    // Load locale
     final localeCode = _prefs.getString('locale') ?? 'en';
     locale.value = Locale(localeCode);
     Get.updateLocale(locale.value);
 
-    // Load speed alerts
     speedAlertEnabled.value = _prefs.getBool('speedAlertEnabled') ?? false;
     speedLimitKmh.value = _prefs.getDouble('speedLimitKmh') ?? 120.0;
+
+    final loopIndex = _prefs.getInt('loopDuration') ?? 0;
+    loopDuration.value = LoopDuration.values[loopIndex.clamp(
+        0, LoopDuration.values.length - 1)];
   }
 
   // --------------------------------------------------------------------------
@@ -91,7 +118,7 @@ class SettingsController extends GetxController {
   }
 
   // --------------------------------------------------------------------------
-  // Speed Limit Alerts (Phase 7)
+  // Speed Limit Alerts
   // --------------------------------------------------------------------------
 
   void toggleSpeedAlert() {
@@ -102,6 +129,15 @@ class SettingsController extends GetxController {
   void setSpeedLimit(double kmh) {
     speedLimitKmh.value = kmh;
     _prefs.setDouble('speedLimitKmh', kmh);
+  }
+
+  // --------------------------------------------------------------------------
+  // Loop Recording
+  // --------------------------------------------------------------------------
+
+  void setLoopDuration(LoopDuration d) {
+    loopDuration.value = d;
+    _prefs.setInt('loopDuration', d.index);
   }
 
   // --------------------------------------------------------------------------

@@ -42,6 +42,13 @@ class AppTranslations extends Translations {
           'export_gpx': 'Export GPX',
           'import_failed': 'Import Failed',
           'import_success': 'GPX imported successfully!',
+          // Loop Recording
+          'loop_recording': 'Loop Recording',
+          'loop_recording_desc':
+              'Automatically split recordings into segments. Oldest unlocked clips are replaced when storage is full.',
+          'current_clip': 'Current Clip',
+          'next_clip_in': 'Next Clip In',
+          'new_segment_started': 'New recording segment started',
         },
         'es': {
           'settings': 'Ajustes',
@@ -82,6 +89,13 @@ class AppTranslations extends Translations {
           'export_gpx': 'Exportar GPX',
           'import_failed': 'Error de Importación',
           'import_success': '¡GPX importado exitosamente!',
+          // Loop Recording
+          'loop_recording': 'Grabación en Bucle',
+          'loop_recording_desc':
+              'Divide las grabaciones automáticamente en segmentos. Los clips más antiguos se reemplazan cuando el almacenamiento está lleno.',
+          'current_clip': 'Clip Actual',
+          'next_clip_in': 'Próximo Clip',
+          'new_segment_started': 'Nuevo segmento de grabación iniciado',
         },
       };
 }
