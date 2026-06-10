@@ -10,7 +10,6 @@ import 'package:gps_speedometer/features/trip/presentation/screens/trip_history_
 import 'package:gps_speedometer/features/trip/presentation/controllers/trip_controller.dart';
 import 'package:gps_speedometer/features/dashcam/presentation/screens/dashcam_screen.dart';
 import 'package:gps_speedometer/features/dashcam/presentation/controllers/dashcam_controller.dart';
-import 'package:gps_speedometer/features/settings/presentation/screens/settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -25,7 +24,6 @@ class _HomeShellState extends State<HomeShell> {
   late final SpeedometerScreen _speedometerScreen = SpeedometerScreen();
   late final TripRecordingScreen _tripRecordingScreen = TripRecordingScreen();
   late final TripHistoryScreen _tripHistoryScreen = TripHistoryScreen();
-  late final SettingsScreen _settingsScreen = SettingsScreen();
   // Dashcam is created lazily — only after user first taps the tab.
   DashcamScreen? _dashcamScreen;
 
@@ -59,7 +57,6 @@ class _HomeShellState extends State<HomeShell> {
           _tripHistoryScreen,
           // Only built once the user taps the Dashcam tab; kept alive after that.
           _dashcamScreen ?? const SizedBox.shrink(),
-          _settingsScreen,
         ],
       ),
       bottomNavigationBar: Container(
@@ -92,11 +89,6 @@ class _HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.videocam_outlined),
               selectedIcon: Icon(Icons.videocam),
               label: 'Dashcam',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
             ),
           ],
         ),

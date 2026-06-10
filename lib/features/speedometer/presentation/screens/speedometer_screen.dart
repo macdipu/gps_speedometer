@@ -39,6 +39,10 @@ class SpeedometerScreen extends StatelessWidget {
                     ),
                   )),
             ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => Get.toNamed('/settings'),
+            ),
           ],
         ),
         body: Column(
