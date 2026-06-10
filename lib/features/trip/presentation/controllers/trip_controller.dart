@@ -5,21 +5,18 @@
 
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../../../core/utils/gps_utils.dart';
 import '../../../../core/utils/gpx_utils.dart';
-import '../../../../core/services/background_location_service.dart';
 import '../../../../core/services/speed_alert_service.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../../data/repositories/trip_repository_impl.dart';
 
 class TripController extends GetxController {
   final _repo = TripRepositoryImpl();
-  final _bgService = BackgroundLocationService();
   final _alertService = SpeedAlertService();
 
   // --------------------------------------------------------------------------
@@ -41,7 +38,6 @@ class TripController extends GetxController {
   // Private state
   // --------------------------------------------------------------------------
   StreamSubscription<Position>? _posSub;
-  StreamSubscription<Map<String, dynamic>?>? _bgPosSub;
   Timer? _timer;
   double? _lastLat;
   double? _lastLng;
@@ -64,7 +60,6 @@ class TripController extends GetxController {
   @override
   void onClose() {
     _posSub?.cancel();
-    _bgPosSub?.cancel();
     _timer?.cancel();
     super.onClose();
   }
@@ -94,17 +89,9 @@ class TripController extends GetxController {
     currentTripId.value = tripId;
     isRecording.value = true;
 
-    await _bgService.startService();
-
-    // Foreground GPS stream — primary source while app is visible
     _posSub = Geolocator.getPositionStream(
       locationSettings: GpsUtils.locationSettings,
     ).listen((pos) => _onPosition(pos));
-
-    // Background service events — picks up positions when app is minimised
-    _bgPosSub = FlutterBackgroundService()
-        .on('position')
-        .listen(_onBackgroundPosition);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       elapsedSeconds.value++;
@@ -115,10 +102,7 @@ class TripController extends GetxController {
     if (!isRecording.value || currentTripId.value == null) return;
 
     _posSub?.cancel();
-    _bgPosSub?.cancel();
     _timer?.cancel();
-
-    await _bgService.stopService();
 
     final avgSpeed = _speedCount > 0 ? _speedSum / _speedCount : 0.0;
     final endTime = DateTime.now();
@@ -206,23 +190,6 @@ class TripController extends GetxController {
     _processPositionData(
       pos.latitude, pos.longitude, speedKmh,
       pos.altitude, pos.accuracy, ts,
-    );
-  }
-
-  void _onBackgroundPosition(Map<String, dynamic>? data) {
-    if (data == null || !isRecording.value) return;
-    final tsStr = data['timestamp'] as String?;
-    final ts = tsStr != null
-        ? DateTime.tryParse(tsStr) ?? DateTime.now()
-        : DateTime.now();
-    if (_isDuplicate(ts)) return;
-    _processPositionData(
-      (data['lat'] as num).toDouble(),
-      (data['lng'] as num).toDouble(),
-      (data['speed_kmh'] as num).toDouble(),
-      (data['altitude'] as num? ?? 0).toDouble(),
-      (data['accuracy'] as num? ?? 0).toDouble(),
-      ts,
     );
   }
 
