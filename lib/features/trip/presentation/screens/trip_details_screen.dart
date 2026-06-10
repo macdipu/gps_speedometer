@@ -429,14 +429,17 @@ class _TripShareCard extends StatelessWidget {
   final double avgSpeed, maxSpeed;
   final String speedLabel;
 
-  static const _bg     = Color(0xFF0B1320);
-  static const _card   = Color(0xFF111E30);
-  static const _accent = Color(0xFF3B82F6);
-  static const _green  = Color(0xFF22C55E);
-  static const _amber  = Color(0xFFF59E0B);
-  static const _text   = Color(0xFFE2E8F0);
-  static const _sub    = Color(0xFF94A3B8);
-  static const _border = Color(0xFF1E3050);
+  static const _bg1     = Color(0xFF050B1A);
+  static const _bg2     = Color(0xFF0C1830);
+  static const _surface = Color(0xFF0A1628);
+  static const _accent  = Color(0xFF3B82F6);
+  static const _violet  = Color(0xFF8B5CF6);
+  static const _cyan    = Color(0xFF06B6D4);
+  static const _green   = Color(0xFF22C55E);
+  static const _red     = Color(0xFFEF4444);
+  static const _text    = Colors.white;
+  static const _sub     = Color(0xFF8898AA);
+  static const _divider = Color(0xFF1A2E45);
 
   @override
   Widget build(BuildContext context) {
@@ -444,218 +447,351 @@ class _TripShareCard extends StatelessWidget {
         .map((p) => LatLng(p.latitude, p.longitude))
         .toList();
 
-    final dateStr = DateFormat('EEE, MMM d yyyy').format(trip.startTime);
+    final dateStr = DateFormat('MMM d, yyyy').format(trip.startTime);
     final timeStr = DateFormat('h:mm a').format(trip.startTime);
 
     return SizedBox(
       width: 400,
       child: Material(
-        color: _bg,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(dateStr, timeStr),
-            _buildRouteSection(points),
-            _buildStatsGrid(),
-            _buildFooter(),
-          ],
+        color: Colors.transparent,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [_bg1, _bg2],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Top gradient bar ───────────────────────────────────────
+              Container(
+                height: 4,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_accent, _violet, _cyan],
+                  ),
+                ),
+              ),
+
+              // ── Header: branding + date ───────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // App icon circle
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [_accent, _violet],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _accent.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.speed,
+                          color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'GPS SPEEDOMETER',
+                          style: TextStyle(
+                            color: _accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          trip.title ?? 'Trip Summary',
+                          style: const TextStyle(
+                            color: _text,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(dateStr,
+                            style: const TextStyle(
+                                color: _sub,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 2),
+                        Text(timeStr,
+                            style: const TextStyle(
+                                color: _sub, fontSize: 10)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Hero stat: max speed ──────────────────────────────────
+              Container(
+                width: double.infinity,
+                color: _surface,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Column(
+                  children: [
+                    Text(
+                      'MAX SPEED',
+                      style: TextStyle(
+                        color: _accent.withValues(alpha: 0.8),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 3.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          maxSpeed.toStringAsFixed(1),
+                          style: const TextStyle(
+                            color: _text,
+                            fontSize: 60,
+                            fontWeight: FontWeight.w800,
+                            height: 1.0,
+                            letterSpacing: -2,
+                          ),
+                        ),
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(bottom: 9, left: 8),
+                          child: Text(
+                            speedLabel,
+                            style: TextStyle(
+                              color: _accent.withValues(alpha: 0.9),
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Route visualization ────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                height: 230,
+                child: Stack(
+                  children: [
+                    // Background
+                    Container(color: const Color(0xFF060E1D)),
+                    // Dot grid
+                    CustomPaint(
+                      size: const Size(400, 230),
+                      painter: _DotGridPainter(),
+                    ),
+                    // Route
+                    CustomPaint(
+                      size: const Size(400, 230),
+                      painter: _RoutePainter(
+                        points: points,
+                        accent: _accent,
+                        cyan: _cyan,
+                        green: _green,
+                        red: _red,
+                      ),
+                    ),
+                    // Top fade into hero section
+                    Positioned(
+                      top: 0, left: 0, right: 0,
+                      child: Container(
+                        height: 28,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [_surface, Colors.transparent],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Bottom fade into stats
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      child: Container(
+                        height: 28,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [_bg2, Colors.transparent],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (points.isEmpty)
+                      const Center(
+                        child: Text('No route data',
+                            style:
+                                TextStyle(color: _sub, fontSize: 13)),
+                      ),
+                    // Start / End legend
+                    if (points.isNotEmpty)
+                      Positioned(
+                        right: 14,
+                        bottom: 14,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _routeLegendItem(_green, 'Start'),
+                            const SizedBox(height: 4),
+                            _routeLegendItem(_red, 'End'),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // ── 3-stat strip ─────────────────────────────────────────
+              Container(
+                color: _surface,
+                padding: const EdgeInsets.symmetric(
+                    vertical: 18, horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: _statCell(
+                            'DISTANCE',
+                            Formatters.distance(trip.distanceMeters))),
+                    _vDivider(),
+                    Expanded(
+                        child: _statCell(
+                            'DURATION',
+                            Formatters.duration(trip.duration))),
+                    _vDivider(),
+                    Expanded(
+                        child: _statCell(
+                            'AVG SPEED',
+                            '${avgSpeed.toStringAsFixed(1)} $speedLabel')),
+                  ],
+                ),
+              ),
+
+              // ── Footer ────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                          color: _accent, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'GPS Speedometer',
+                      style: TextStyle(
+                        color: _sub,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                          color: _violet, shape: BoxShape.circle),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Bottom gradient bar ───────────────────────────────────
+              Container(
+                height: 4,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_cyan, _violet, _accent],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(String date, String time) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF1E3A5F), Color(0xFF0F2744)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  static Widget _routeLegendItem(Color dot, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
         ),
-        border: Border(bottom: BorderSide(color: _border, width: 1)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(
-              color: _accent.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _accent.withValues(alpha: 0.4)),
-            ),
-            child: const Icon(Icons.speed, color: _accent, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('GPS SPEEDOMETER',
-                  style: TextStyle(
-                      color: _accent,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2)),
-              const SizedBox(height: 2),
-              Text(trip.title ?? 'Trip Recording',
-                  style: const TextStyle(
-                      color: _text,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(date,
-                  style: const TextStyle(color: _sub, fontSize: 11)),
-              const SizedBox(height: 2),
-              Text(time,
-                  style: const TextStyle(
-                      color: _text, fontSize: 12, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ],
-      ),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(
+                color: _sub, fontSize: 10, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 
-  Widget _buildRouteSection(List<LatLng> points) {
-    return Container(
-      width: double.infinity,
-      height: 220,
-      color: const Color(0xFF0D1927),
-      child: Stack(
-        children: [
-          // Dot grid background
-          CustomPaint(
-            size: const Size(400, 220),
-            painter: _DotGridPainter(),
+  static Widget _statCell(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: _sub,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
           ),
-          // Route
-          ClipRect(
-            child: CustomPaint(
-              size: const Size(400, 220),
-              painter: _RoutePainter(points: points, accent: _accent, green: _green),
-            ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            color: _text,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
-          // Labels
-          Positioned(
-            left: 14, bottom: 12,
-            child: Row(children: [
-              Container(
-                width: 8, height: 8,
-                decoration: const BoxDecoration(
-                    color: _green, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 5),
-              const Text('Start', style: TextStyle(color: _sub, fontSize: 10)),
-              const SizedBox(width: 12),
-              Container(
-                width: 8, height: 8,
-                decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444), shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 5),
-              const Text('End', style: TextStyle(color: _sub, fontSize: 10)),
-            ]),
-          ),
-          if (points.isEmpty)
-            const Center(
-              child: Text('No route data',
-                  style: TextStyle(color: _sub, fontSize: 13)),
-            ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
-  Widget _buildStatsGrid() {
-    return Container(
-      color: _card,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Column(
-        children: [
-          Row(children: [
-            Expanded(child: _statCell(Icons.route_outlined, 'DISTANCE',
-                Formatters.distance(trip.distanceMeters), _accent)),
-            const SizedBox(width: 10),
-            Expanded(child: _statCell(Icons.timer_outlined, 'DURATION',
-                Formatters.duration(trip.duration), _amber)),
-          ]),
-          const SizedBox(height: 10),
-          Row(children: [
-            Expanded(child: _statCell(Icons.speed_outlined, 'AVG SPEED',
-                '${avgSpeed.toStringAsFixed(1)} $speedLabel', _green)),
-            const SizedBox(width: 10),
-            Expanded(child: _statCell(Icons.flash_on_outlined, 'MAX SPEED',
-                '${maxSpeed.toStringAsFixed(1)} $speedLabel', const Color(0xFFEC4899))),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _statCell(
-      IconData icon, String label, String value, Color accent) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _bg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(icon, color: accent, size: 14),
-            const SizedBox(width: 5),
-            Text(label,
-                style: TextStyle(
-                    color: accent,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2)),
-          ]),
-          const SizedBox(height: 6),
-          Text(value,
-              style: const TextStyle(
-                  color: _text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF080F1A),
-        border: Border(top: BorderSide(color: _border, width: 1)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.directions_car, color: _sub, size: 14),
-          const SizedBox(width: 6),
-          const Text('GPS Speedometer',
-              style: TextStyle(
-                  color: _sub,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.3)),
-          const Spacer(),
-          Text('${trip.points.length} GPS pts',
-              style: const TextStyle(color: _sub, fontSize: 10)),
-        ],
-      ),
-    );
+  static Widget _vDivider() {
+    return Container(width: 1, height: 38, color: _divider);
   }
 }
 
@@ -665,12 +801,12 @@ class _DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF1A2E45)
+      ..color = const Color(0xFF112035)
       ..strokeWidth = 1;
-    const gap = 20.0;
-    for (double x = 0; x < size.width; x += gap) {
-      for (double y = 0; y < size.height; y += gap) {
-        canvas.drawCircle(Offset(x, y), 1.2, paint);
+    const gap = 18.0;
+    for (double x = gap / 2; x < size.width; x += gap) {
+      for (double y = gap / 2; y < size.height; y += gap) {
+        canvas.drawCircle(Offset(x, y), 1.0, paint);
       }
     }
   }
@@ -683,12 +819,13 @@ class _RoutePainter extends CustomPainter {
   const _RoutePainter({
     required this.points,
     required this.accent,
+    required this.cyan,
     required this.green,
+    required this.red,
   });
 
   final List<LatLng> points;
-  final Color accent;
-  final Color green;
+  final Color accent, cyan, green, red;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -700,20 +837,18 @@ class _RoutePainter extends CustomPainter {
       return;
     }
 
-    const pad = 32.0;
+    const pad = 36.0;
     double minLat = points.map((p) => p.latitude).reduce(math.min);
     double maxLat = points.map((p) => p.latitude).reduce(math.max);
     double minLng = points.map((p) => p.longitude).reduce(math.min);
     double maxLng = points.map((p) => p.longitude).reduce(math.max);
 
-    // Ensure non-zero span
     final latSpan = (maxLat - minLat).abs().clamp(0.0001, 360.0);
     final lngSpan = (maxLng - minLng).abs().clamp(0.0001, 360.0);
 
     final w = size.width - pad * 2;
     final h = size.height - pad * 2;
 
-    // Preserve aspect ratio
     final scaleX = w / lngSpan;
     final scaleY = h / latSpan;
     final scale = math.min(scaleX, scaleY);
@@ -725,40 +860,69 @@ class _RoutePainter extends CustomPainter {
           offsetY + (maxLat - ll.latitude) * scale,
         );
 
-    // Glow / shadow pass
-    final glowPaint = Paint()
-      ..color = accent.withValues(alpha: 0.18)
-      ..strokeWidth = 8
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    final first = project(points.first);
+    final last = project(points.last);
 
-    final path = ui.Path()..moveTo(project(points.first).dx, project(points.first).dy);
+    final path = ui.Path()..moveTo(first.dx, first.dy);
     for (final p in points.skip(1)) {
       path.lineTo(project(p).dx, project(p).dy);
     }
-    canvas.drawPath(path, glowPaint);
 
-    // Main route line
-    final routePaint = Paint()
-      ..color = accent
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, routePaint);
+    // Outer glow (wide, soft)
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = accent.withValues(alpha: 0.12)
+        ..strokeWidth = 16
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
 
-    // Start marker
-    final start = project(points.first);
-    canvas.drawCircle(start, 6,
-        Paint()..color = const Color(0xFF1A2E45));
-    canvas.drawCircle(start, 5, Paint()..color = green);
+    // Inner glow (narrower)
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = accent.withValues(alpha: 0.28)
+        ..strokeWidth = 7
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
 
-    // End marker
-    final end = project(points.last);
-    canvas.drawCircle(end, 6,
-        Paint()..color = const Color(0xFF1A2E45));
-    canvas.drawCircle(end, 5, Paint()..color = const Color(0xFFEF4444));
+    // Route line with gradient shader
+    final routeRect = Rect.fromPoints(first, last);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          routeRect.topLeft,
+          routeRect.bottomRight,
+          [accent, cyan],
+        )
+        ..strokeWidth = 3
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    // Start dot: green ring + white center
+    _drawMarker(canvas, first, green);
+    // End dot: red ring + white center
+    _drawMarker(canvas, last, red);
+  }
+
+  void _drawMarker(Canvas canvas, Offset pos, Color color) {
+    canvas.drawCircle(pos, 8,
+        Paint()..color = color.withValues(alpha: 0.25));
+    canvas.drawCircle(pos, 5,
+        Paint()..color = color);
+    canvas.drawCircle(
+        pos,
+        3,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill);
   }
 
   @override
