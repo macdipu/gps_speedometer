@@ -1,18 +1,21 @@
 /// TripRecordingScreen — Start/Stop trip recording with live stats display.
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart' as flutterMap;
+import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/gps_utils.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../controllers/trip_controller.dart';
 
 class TripRecordingScreen extends StatelessWidget {
   TripRecordingScreen({super.key});
 
   final controller = Get.find<TripController>();
+  final settings = Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +33,21 @@ class TripRecordingScreen extends StatelessWidget {
       ),
       body: Obx(() {
         final recording = controller.isRecording.value;
+        final unit = settings.speedUnit.value;
+        final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+        final dispSpeed = unit == SpeedUnit.kmh
+            ? controller.currentSpeed.value
+            : GpsUtils.kmhToMph(controller.currentSpeed.value);
+        final dispMax = unit == SpeedUnit.kmh
+            ? controller.maxSpeed.value
+            : GpsUtils.kmhToMph(controller.maxSpeed.value);
+
         return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
               const SizedBox(height: 20),
 
-              // Big record pulse circle
               _RecordButton(
                 isRecording: recording,
                 onTap: recording ? controller.stopTrip : controller.startTrip,
@@ -45,7 +56,6 @@ class TripRecordingScreen extends StatelessWidget {
               const SizedBox(height: 48),
 
               if (recording) ...[
-                // Live stats grid
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
@@ -70,82 +80,28 @@ class TripRecordingScreen extends StatelessWidget {
                     ),
                     _LiveStatCard(
                       label: 'SPEED',
-                      value:
-                          '${controller.currentSpeed.value.toStringAsFixed(1)} km/h',
+                      value: '${dispSpeed.toStringAsFixed(1)} $unitLabel',
                       icon: Icons.speed,
                       color: AppColors.gaugeLow,
                     ),
                     _LiveStatCard(
                       label: 'MAX SPEED',
-                      value:
-                          '${controller.maxSpeed.value.toStringAsFixed(1)} km/h',
+                      value: '${dispMax.toStringAsFixed(1)} $unitLabel',
                       icon: Icons.flash_on,
                       color: AppColors.accent,
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
-                // Live Map View
+
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: Obx(() {
-                      final points = controller.livePoints;
-                      
-                      // Use the latest position or a default if no points yet
-                      final center = points.isNotEmpty 
-                          ? latlong2.LatLng(points.last.latitude, points.last.longitude)
-                          : latlong2.LatLng(23.8103, 90.4125); // Default to Dhaka
-                      
-                      return flutterMap.FlutterMap(
-                        options: flutterMap.MapOptions(
-                          initialCenter: center,
-                          initialZoom: 16,
-                          interactionOptions: const flutterMap.InteractionOptions(
-                            flags: flutterMap.InteractiveFlag.all,
-                          ),
-                        ),
-                        children: [
-                          flutterMap.TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.chowdhuryelab.gps_speedometer',
-                          ),
-                          if (points.length >= 2)
-                            flutterMap.PolylineLayer(
-                              polylines: [
-                                flutterMap.Polyline(
-                                  points: points.map((p) => latlong2.LatLng(p.latitude, p.longitude)).toList(),
-                                  color: AppColors.primary,
-                                  strokeWidth: 4.0,
-                                ),
-                              ],
-                            ),
-                          if (points.isNotEmpty)
-                            flutterMap.MarkerLayer(
-                              markers: [
-                                flutterMap.Marker(
-                                  point: center,
-                                  width: 24,
-                                  height: 24,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: AppColors.accent,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      );
-                    }),
+                    child: _LiveTripMap(controller: controller),
                   ),
                 ),
               ] else ...[
-                // Empty state
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -174,6 +130,101 @@ class TripRecordingScreen extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 
+class _LiveTripMap extends StatefulWidget {
+  const _LiveTripMap({required this.controller});
+  final TripController controller;
+
+  @override
+  State<_LiveTripMap> createState() => _LiveTripMapState();
+}
+
+class _LiveTripMapState extends State<_LiveTripMap> {
+  late final flutterMap.MapController _mapController;
+  bool _mapReady = false;
+  Worker? _posWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = flutterMap.MapController();
+    _posWorker = ever(widget.controller.livePoints, (_) {
+      if (_mapReady && widget.controller.livePoints.isNotEmpty) {
+        final last = widget.controller.livePoints.last;
+        _mapController.move(
+          latlong2.LatLng(last.latitude, last.longitude),
+          _mapController.camera.zoom,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _posWorker?.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final points = widget.controller.livePoints;
+      final center = points.isNotEmpty
+          ? latlong2.LatLng(points.last.latitude, points.last.longitude)
+          : const latlong2.LatLng(0, 0);
+
+      return flutterMap.FlutterMap(
+        mapController: _mapController,
+        options: flutterMap.MapOptions(
+          initialCenter: center,
+          initialZoom: 16,
+          onMapReady: () => _mapReady = true,
+          interactionOptions: const flutterMap.InteractionOptions(
+            flags: flutterMap.InteractiveFlag.all,
+          ),
+        ),
+        children: [
+          flutterMap.TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.chowdhuryelab.gps_speedometer',
+          ),
+          if (points.length >= 2)
+            flutterMap.PolylineLayer(
+              polylines: [
+                flutterMap.Polyline(
+                  points: points
+                      .map((p) => latlong2.LatLng(p.latitude, p.longitude))
+                      .toList(),
+                  color: AppColors.primary,
+                  strokeWidth: 4.0,
+                ),
+              ],
+            ),
+          if (points.isNotEmpty)
+            flutterMap.MarkerLayer(
+              markers: [
+                flutterMap.Marker(
+                  point: center,
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      );
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 class _RecordButton extends StatefulWidget {
   const _RecordButton({required this.isRecording, required this.onTap});
   final bool isRecording;
@@ -193,7 +244,19 @@ class _RecordButtonState extends State<_RecordButton>
     _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
+    );
+    if (widget.isRecording) _anim.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_RecordButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isRecording && !_anim.isAnimating) {
+      _anim.repeat(reverse: true);
+    } else if (!widget.isRecording && _anim.isAnimating) {
+      _anim.stop();
+      _anim.value = 0;
+    }
   }
 
   @override

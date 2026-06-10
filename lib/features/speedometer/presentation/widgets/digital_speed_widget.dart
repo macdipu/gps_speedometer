@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/gps_utils.dart';
 import '../controllers/speedometer_controller.dart';
 
 class DigitalSpeedWidget extends StatelessWidget {
@@ -58,7 +59,7 @@ class DigitalSpeedWidget extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Speed bar
-              _SpeedBar(speed: speed, maxDisplay: s.unit.name == 'kmh' ? 220 : 140),
+              _SpeedBar(speed: speed, maxDisplay: s.unit == SpeedUnit.kmh ? 220 : 140),
             ],
           ),
         ),

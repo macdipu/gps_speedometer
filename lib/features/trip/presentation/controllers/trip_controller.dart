@@ -5,6 +5,7 @@
 
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:file_picker/file_picker.dart';
@@ -30,25 +31,25 @@ class TripController extends GetxController {
   final trips = <TripEntity>[].obs;
   final livePoints = <TripPointEntity>[].obs;
 
-  /// Live stats during recording
-  final currentDistance = 0.0.obs;   // meters
-  final currentSpeed = 0.0.obs;      // km/h
-  final maxSpeed = 0.0.obs;          // km/h
+  final currentDistance = 0.0.obs;
+  final currentSpeed = 0.0.obs;
+  final maxSpeed = 0.0.obs;
   final elapsedSeconds = 0.obs;
-
-  /// Whether the current speed exceeds the alert threshold
   final isOverSpeedLimit = false.obs;
 
   // --------------------------------------------------------------------------
   // Private state
   // --------------------------------------------------------------------------
   StreamSubscription<Position>? _posSub;
+  StreamSubscription<Map<String, dynamic>?>? _bgPosSub;
   Timer? _timer;
-  Position? _lastPosition;
+  double? _lastLat;
+  double? _lastLng;
   double _totalDistance = 0.0;
   double _speedSum = 0.0;
   int _speedCount = 0;
   DateTime? _startTime;
+  DateTime? _lastPositionTs;
 
   // --------------------------------------------------------------------------
   // Lifecycle
@@ -63,6 +64,7 @@ class TripController extends GetxController {
   @override
   void onClose() {
     _posSub?.cancel();
+    _bgPosSub?.cancel();
     _timer?.cancel();
     super.onClose();
   }
@@ -78,7 +80,9 @@ class TripController extends GetxController {
     _totalDistance = 0.0;
     _speedSum = 0.0;
     _speedCount = 0;
-    _lastPosition = null;
+    _lastLat = null;
+    _lastLng = null;
+    _lastPositionTs = null;
     currentDistance.value = 0.0;
     currentSpeed.value = 0.0;
     maxSpeed.value = 0.0;
@@ -90,15 +94,18 @@ class TripController extends GetxController {
     currentTripId.value = tripId;
     isRecording.value = true;
 
-    // Phase 6: Start background GPS service so recording continues when minimised
     await _bgService.startService();
 
-    // Start GPS stream (also used while in foreground for live UI)
+    // Foreground GPS stream — primary source while app is visible
     _posSub = Geolocator.getPositionStream(
       locationSettings: GpsUtils.locationSettings,
     ).listen((pos) => _onPosition(pos));
 
-    // Start elapsed timer
+    // Background service events — picks up positions when app is minimised
+    _bgPosSub = FlutterBackgroundService()
+        .on('position')
+        .listen(_onBackgroundPosition);
+
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       elapsedSeconds.value++;
     });
@@ -108,9 +115,9 @@ class TripController extends GetxController {
     if (!isRecording.value || currentTripId.value == null) return;
 
     _posSub?.cancel();
+    _bgPosSub?.cancel();
     _timer?.cancel();
 
-    // Phase 6: Stop background service
     await _bgService.stopService();
 
     final avgSpeed = _speedCount > 0 ? _speedSum / _speedCount : 0.0;
@@ -152,7 +159,6 @@ class TripController extends GetxController {
         return;
       }
 
-      // Re-calculate distance based on points for accuracy
       double dist = 0.0;
       double maxSpd = 0.0;
       double spdSum = 0.0;
@@ -194,44 +200,73 @@ class TripController extends GetxController {
   // --------------------------------------------------------------------------
 
   void _onPosition(Position pos) {
+    final ts = pos.timestamp;
+    if (_isDuplicate(ts)) return;
     final speedKmh = GpsUtils.msToKmh(GpsUtils.sanitizeSpeed(pos.speed));
+    _processPositionData(
+      pos.latitude, pos.longitude, speedKmh,
+      pos.altitude, pos.accuracy, ts,
+    );
+  }
+
+  void _onBackgroundPosition(Map<String, dynamic>? data) {
+    if (data == null || !isRecording.value) return;
+    final tsStr = data['timestamp'] as String?;
+    final ts = tsStr != null
+        ? DateTime.tryParse(tsStr) ?? DateTime.now()
+        : DateTime.now();
+    if (_isDuplicate(ts)) return;
+    _processPositionData(
+      (data['lat'] as num).toDouble(),
+      (data['lng'] as num).toDouble(),
+      (data['speed_kmh'] as num).toDouble(),
+      (data['altitude'] as num? ?? 0).toDouble(),
+      (data['accuracy'] as num? ?? 0).toDouble(),
+      ts,
+    );
+  }
+
+  bool _isDuplicate(DateTime ts) {
+    if (_lastPositionTs == null) return false;
+    return ts.difference(_lastPositionTs!).inMilliseconds.abs() < 800;
+  }
+
+  void _processPositionData(
+    double lat,
+    double lng,
+    double speedKmh,
+    double altitude,
+    double accuracy,
+    DateTime timestamp,
+  ) {
+    _lastPositionTs = timestamp;
     currentSpeed.value = speedKmh;
-
     if (speedKmh > maxSpeed.value) maxSpeed.value = speedKmh;
-
-    // Accumulate speed for average
     _speedSum += speedKmh;
     _speedCount++;
 
-    // Distance calculation
-    if (_lastPosition != null) {
-      final d = GpsUtils.haversineDistance(
-        _lastPosition!.latitude,
-        _lastPosition!.longitude,
-        pos.latitude,
-        pos.longitude,
-      );
+    if (_lastLat != null && _lastLng != null) {
+      final d = GpsUtils.haversineDistance(_lastLat!, _lastLng!, lat, lng);
       _totalDistance += d;
       currentDistance.value = _totalDistance;
     }
-    _lastPosition = pos;
+    _lastLat = lat;
+    _lastLng = lng;
 
-    // Persist point to DB
     if (currentTripId.value != null) {
       final point = TripPointEntity(
         tripId: currentTripId.value!,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
+        latitude: lat,
+        longitude: lng,
         speedKmh: speedKmh,
-        accuracy: pos.accuracy,
-        altitude: pos.altitude,
-        timestamp: pos.timestamp,
+        accuracy: accuracy,
+        altitude: altitude,
+        timestamp: timestamp,
       );
       _repo.addTripPoint(point);
       livePoints.add(point);
     }
 
-    // Phase 7: Speed limit alert
     _alertService.checkSpeed(speedKmh);
   }
 

@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../../../../app_pages.dart';
 import '../../../../core/utils/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/gps_utils.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../../domain/entities/trip_entity.dart';
 import '../controllers/trip_controller.dart';
 
@@ -13,6 +15,7 @@ class TripHistoryScreen extends StatelessWidget {
   TripHistoryScreen({super.key});
 
   final controller = Get.find<TripController>();
+  final settings = Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -53,12 +56,14 @@ class TripHistoryScreen extends StatelessWidget {
           );
         }
 
+        final unit = settings.speedUnit.value;
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: trips.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) => _TripCard(
             trip: trips[i],
+            unit: unit,
             onTap: () => Get.toNamed(
               Routes.tripDetails,
               arguments: trips[i].id,
@@ -106,12 +111,14 @@ class TripHistoryScreen extends StatelessWidget {
 class _TripCard extends StatelessWidget {
   const _TripCard({
     required this.trip,
+    required this.unit,
     required this.onTap,
     required this.onDelete,
     required this.onAnalyze,
   });
 
   final TripEntity trip;
+  final SpeedUnit unit;
   final VoidCallback onTap, onDelete, onAnalyze;
 
   @override
@@ -159,25 +166,32 @@ class _TripCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _TripStat(
-                    icon: Icons.route,
-                    label: Formatters.distance(trip.distanceMeters)),
-                _TripStat(
-                    icon: Icons.speed,
-                    label:
-                        '${trip.avgSpeedKmh.toStringAsFixed(1)} km/h avg'),
-                _TripStat(
-                    icon: Icons.flash_on,
-                    label:
-                        '${trip.maxSpeedKmh.toStringAsFixed(1)} km/h max'),
-                _TripStat(
-                    icon: Icons.timer,
-                    label: Formatters.durationShort(trip.duration)),
-              ],
-            ),
+            Builder(builder: (_) {
+              final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+              final avg = unit == SpeedUnit.kmh
+                  ? trip.avgSpeedKmh
+                  : GpsUtils.kmhToMph(trip.avgSpeedKmh);
+              final max = unit == SpeedUnit.kmh
+                  ? trip.maxSpeedKmh
+                  : GpsUtils.kmhToMph(trip.maxSpeedKmh);
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _TripStat(
+                      icon: Icons.route,
+                      label: Formatters.distance(trip.distanceMeters)),
+                  _TripStat(
+                      icon: Icons.speed,
+                      label: '${avg.toStringAsFixed(1)} $unitLabel avg'),
+                  _TripStat(
+                      icon: Icons.flash_on,
+                      label: '${max.toStringAsFixed(1)} $unitLabel max'),
+                  _TripStat(
+                      icon: Icons.timer,
+                      label: Formatters.durationShort(trip.duration)),
+                ],
+              );
+            }),
           ],
         ),
       ),

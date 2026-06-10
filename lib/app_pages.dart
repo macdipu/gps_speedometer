@@ -60,11 +60,11 @@ class AppPages {
     ),
     GetPage(
       name: Routes.tripDetails,
-      page: () => TripDetailsScreen(),
+      page: () => const TripDetailsScreen(),
     ),
     GetPage(
       name: Routes.tripAnalysis,
-      page: () => TripAnalysisScreen(),
+      page: () => const TripAnalysisScreen(),
       binding: AnalysisBinding(),
     ),
     GetPage(

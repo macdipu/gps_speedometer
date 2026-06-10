@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import '../../domain/entities/analysis_entity.dart';
 import '../../../trip/domain/entities/trip_entity.dart';
 import '../../../trip/data/repositories/trip_repository_impl.dart';
+import '../../../../core/utils/gps_utils.dart';
 
 class AnalysisController extends GetxController {
   final _repo = TripRepositoryImpl();
@@ -117,8 +118,10 @@ class AnalysisController extends GetxController {
 
     for (int i = 1; i < points.length; i++) {
       final curr = points[i];
-      // distance between consecutive points is not stored; approximate via speed×time
-      segDist += 0; // placeholder — use actual stored distance if available
+      final prev = points[i - 1];
+      segDist += GpsUtils.haversineDistance(
+        prev.latitude, prev.longitude, curr.latitude, curr.longitude,
+      );
       segMaxSpeed = math.max(segMaxSpeed, curr.speedKmh);
       segSpeedSum += curr.speedKmh;
       segCount++;

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/utils/app_theme.dart';
+import '../../../../core/utils/gps_utils.dart';
 import '../controllers/speedometer_controller.dart';
 
 class AnalogGaugeWidget extends StatelessWidget {
@@ -16,7 +17,7 @@ class AnalogGaugeWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final s = controller.speedometer.value;
-      final maxVal = s.unit.name == 'kmh' ? 220.0 : 140.0;
+      final maxVal = s.unit == SpeedUnit.kmh ? 220.0 : 140.0;
       final fraction = (s.displaySpeed / maxVal).clamp(0.0, 1.0);
 
       return Container(

@@ -64,7 +64,11 @@ class _HudOverlayWidgetState extends State<HudOverlayWidget>
           final speedKmh = GpsUtils.msToKmh(s.speedMs);
           final limitKmh = settings.speedLimitKmh.value;
           final alertEnabled = settings.speedAlertEnabled.value;
-          final isOverLimit = alertEnabled && speedKmh > limitKmh;          return Stack(
+          final isOverLimit = alertEnabled && speedKmh > limitKmh;
+          final unit = settings.speedUnit.value;
+          final limitDisplay = unit == SpeedUnit.kmh ? limitKmh : GpsUtils.kmhToMph(limitKmh);
+          final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+          return Stack(
             children: [
               Transform(
                 // Mirror horizontally for HUD windshield reflection
@@ -178,14 +182,29 @@ class _HudOverlayWidgetState extends State<HudOverlayWidget>
                                   const Icon(Icons.warning_amber_rounded,
                                       color: AppColors.error, size: 18),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    'SPEED LIMIT',
-                                    style: const TextStyle(
-                                      color: AppColors.error,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 2,
-                                    ),
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'OVER LIMIT',
+                                        style: TextStyle(
+                                          color: AppColors.error,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${limitDisplay.toStringAsFixed(0)} $unitLabel',
+                                        style: const TextStyle(
+                                          color: AppColors.error,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
