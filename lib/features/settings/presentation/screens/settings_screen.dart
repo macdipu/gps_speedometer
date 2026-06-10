@@ -351,7 +351,9 @@ class _LanguageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
       onTap: onTap,
@@ -368,6 +370,7 @@ class _LanguageTile extends StatelessWidget {
           ? Icon(Icons.check_circle,
               color: context.primaryColor, size: 20)
           : null,
+      ),
     );
   }
 }

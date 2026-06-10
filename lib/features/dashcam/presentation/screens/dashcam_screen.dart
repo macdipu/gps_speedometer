@@ -23,7 +23,7 @@ class DashcamScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Camera preview ──────────────────────────────────────────────
+          // ── Camera preview ─────────────────────────────────────────────
           Obx(() {
             if (!controller.isInitialized.value ||
                 controller.cameraController == null) {
@@ -31,13 +31,15 @@ class DashcamScreen extends StatelessWidget {
                 child: CircularProgressIndicator(color: AppColors.primary),
               );
             }
+            final cam = controller.cameraController!;
+            final previewSize = cam.value.previewSize;
             return SizedBox.expand(
               child: FittedBox(
                 fit: BoxFit.cover,
                 child: SizedBox(
-                  width: controller.cameraController!.value.previewSize?.height ?? 1,
-                  height: controller.cameraController!.value.previewSize?.width ?? 1,
-                  child: CameraPreview(controller.cameraController!),
+                  width: previewSize?.height ?? 1080,
+                  height: previewSize?.width ?? 1920,
+                  child: CameraPreview(cam),
                 ),
               ),
             );
@@ -52,7 +54,7 @@ class DashcamScreen extends StatelessWidget {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -61,17 +63,15 @@ class DashcamScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Back
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back,
+                    // Back button
+                    GestureDetector(
+                      onTap: Get.back,
+                      child: const Icon(Icons.arrow_back,
                           color: Colors.white, size: 28),
-                      onPressed: Get.back,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                     const SizedBox(width: 12),
 
-                    // REC status + elapsed
+                    // REC indicator or STANDBY
                     Obx(() => controller.isRecording.value
                         ? _RecIndicator(
                             elapsed: controller.totalElapsedSeconds.value)
@@ -87,15 +87,14 @@ class DashcamScreen extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Switching clip indicator
+                    // "SAVING" badge during clip transition
                     Obx(() => controller.isSwitchingClip.value
-                        ? const _PillBadge(
-                            label: 'SAVING',
-                            color: Colors.orange,
+                        ? const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: _PillBadge(
+                                label: 'SAVING', color: Colors.orange),
                           )
                         : const SizedBox.shrink()),
-
-                    const SizedBox(width: 8),
 
                     // Resolution
                     Obx(() => _PillBadge(
@@ -108,64 +107,75 @@ class DashcamScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Speed overlay (bottom-right) ────────────────────────────────
-          Positioned(
-            right: 16,
-            bottom: 160,
-            child: Obx(() {
-              final unit = settings.speedUnit.value;
-              final kmh = controller.tripController.currentSpeed.value;
-              final disp = unit == SpeedUnit.kmh ? kmh : GpsUtils.kmhToMph(kmh);
-              final unitLabel = unit == SpeedUnit.kmh ? 'km/h' : 'mph';
-              return _SpeedBadge(speed: disp, unit: unitLabel);
-            }),
-          ),
-
-          // ── Bottom overlay (loop info + controls) ──────────────────────
+          // ── Bottom overlay (speed + loop info + controls) ───────────────
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Loop info card — only when recording with loop enabled
-                  Obx(() {
-                    final recording = controller.isRecording.value;
-                    final total = controller.clipTotalSeconds.value;
-                    if (!recording || total == 0) return const SizedBox.shrink();
-
-                    return _LoopInfoCard(controller: controller);
-                  }),
-
-                  const SizedBox(height: 12),
-
-                  // Controls row
-                  Obx(() {
-                    final recording = controller.isRecording.value;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Colors.black87, Colors.transparent],
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Speed badge + lock row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          // Lock button (only while recording)
-                          if (recording) ...[
-                            _LockButton(controller: controller),
-                            const SizedBox(width: 32),
-                          ],
+                          // Speed
+                          Obx(() {
+                            final unit = settings.speedUnit.value;
+                            final kmh =
+                                controller.tripController.currentSpeed.value;
+                            final disp = unit == SpeedUnit.kmh
+                                ? kmh
+                                : GpsUtils.kmhToMph(kmh);
+                            final label =
+                                unit == SpeedUnit.kmh ? 'km/h' : 'mph';
+                            return _SpeedBadge(speed: disp, unit: label);
+                          }),
+                          const Spacer(),
 
-                          _RecordButton(
-                            isRecording: recording,
-                            onTap: controller.toggleRecording,
-                          ),
+                          // Lock toggle (only while recording)
+                          Obx(() => controller.isRecording.value
+                              ? _LockButton(controller: controller)
+                              : const SizedBox.shrink()),
                         ],
                       ),
-                    );
-                  }),
+                    ),
 
-                  const SizedBox(height: 32),
-                ],
+                    // Loop info card (recording + loop enabled)
+                    Obx(() {
+                      final recording = controller.isRecording.value;
+                      final total = controller.clipTotalSeconds.value;
+                      if (!recording || total == 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        child: _LoopInfoCard(controller: controller),
+                      );
+                    }),
+
+                    // Record button
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 28),
+                      child: Obx(() => _RecordButton(
+                            isRecording: controller.isRecording.value,
+                            onTap: controller.toggleRecording,
+                          )),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -197,58 +207,53 @@ class _LoopInfoCard extends StatelessWidget {
       final segCount = controller.segmentCount.value;
 
       return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.75),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.black.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row
+            // Header: loop label + segment count
             Row(
               children: [
-                const Icon(Icons.loop,
-                    color: AppColors.primary, size: 14),
-                const SizedBox(width: 6),
+                const Icon(Icons.loop, color: AppColors.primary, size: 13),
+                const SizedBox(width: 5),
                 Text(
-                  '${'loop_recording'.tr}: ${(total ~/ 60)} min',
+                  '${'loop_recording'.tr}  ${total ~/ 60} min',
                   style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
+                      color: Colors.white60,
+                      fontSize: 11,
                       letterSpacing: 0.5),
                 ),
                 const Spacer(),
                 if (segCount > 0)
                   Text(
-                    '$segCount clips saved',
+                    '$segCount clips',
                     style: const TextStyle(
                         color: Colors.white38, fontSize: 11),
                   ),
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            // Clip timer row
+            // Clip timer
             Row(
               children: [
-                const Icon(Icons.videocam,
-                    color: Colors.white54, size: 13),
-                const SizedBox(width: 6),
                 Text(
                   'current_clip'.tr,
                   style: const TextStyle(
-                      color: Colors.white54, fontSize: 12),
+                      color: Colors.white54, fontSize: 11),
                 ),
                 const Spacer(),
                 Text(
-                  '${DashcamController.formatClock(elapsed)} / ${DashcamController.formatClock(total)}',
+                  '${DashcamController.formatClock(elapsed)}  /  ${DashcamController.formatClock(total)}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'RobotoMono',
                   ),
@@ -256,14 +261,14 @@ class _LoopInfoCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
             // Progress bar
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 6,
+                minHeight: 5,
                 backgroundColor: Colors.white12,
                 valueColor: AlwaysStoppedAnimation(
                   progress < 0.8
@@ -275,18 +280,18 @@ class _LoopInfoCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
-            // Next clip countdown + storage
+            // Countdown + storage
             Row(
               children: [
                 const Icon(Icons.timer_outlined,
-                    color: Colors.white38, size: 13),
-                const SizedBox(width: 6),
+                    color: Colors.white38, size: 12),
+                const SizedBox(width: 4),
                 Text(
                   'next_clip_in'.tr,
                   style: const TextStyle(
-                      color: Colors.white38, fontSize: 12),
+                      color: Colors.white38, fontSize: 11),
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -294,23 +299,19 @@ class _LoopInfoCard extends StatelessWidget {
                       ? DashcamController.formatClock(remaining)
                       : '${remaining}s',
                   style: TextStyle(
-                    color: remaining <= 10
-                        ? Colors.orange
-                        : Colors.white,
-                    fontSize: 13,
+                    color: remaining <= 10 ? Colors.orange : Colors.white70,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'RobotoMono',
                   ),
                 ),
                 const Spacer(),
                 const Icon(Icons.folder_outlined,
-                    color: Colors.white24, size: 13),
-                const SizedBox(width: 4),
-                Text(
-                  storageStr,
-                  style: const TextStyle(
-                      color: Colors.white38, fontSize: 11),
-                ),
+                    color: Colors.white24, size: 12),
+                const SizedBox(width: 3),
+                Text(storageStr,
+                    style: const TextStyle(
+                        color: Colors.white38, fontSize: 11)),
               ],
             ),
           ],
@@ -321,7 +322,7 @@ class _LoopInfoCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Reusable HUD widgets
+// HUD widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _RecIndicator extends StatelessWidget {
@@ -333,7 +334,7 @@ class _RecIndicator extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _BlinkingDot(),
+        const _BlinkingDot(),
         const SizedBox(width: 6),
         Text(
           'REC  ${DashcamController.formatClock(elapsed)}',
@@ -351,6 +352,8 @@ class _RecIndicator extends StatelessWidget {
 }
 
 class _BlinkingDot extends StatefulWidget {
+  const _BlinkingDot();
+
   @override
   State<_BlinkingDot> createState() => _BlinkingDotState();
 }
@@ -406,7 +409,9 @@ class _PillBadge extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-            color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -420,29 +425,30 @@ class _SpeedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.65),
+        color: Colors.black.withOpacity(0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.35)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             speed.toStringAsFixed(0),
             style: const TextStyle(
               color: AppColors.primary,
-              fontSize: 40,
+              fontSize: 44,
               fontWeight: FontWeight.w900,
               height: 1.0,
-              shadows: [Shadow(color: Colors.black, blurRadius: 8)],
+              shadows: [Shadow(color: Colors.black54, blurRadius: 8)],
             ),
           ),
           Text(
             unit,
             style: const TextStyle(
-              color: Colors.white70,
+              color: Colors.white60,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 1,
@@ -465,8 +471,8 @@ class _LockButton extends StatelessWidget {
       return GestureDetector(
         onTap: controller.toggleLock,
         child: Container(
-          width: 54,
-          height: 54,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: locked
@@ -480,7 +486,7 @@ class _LockButton extends StatelessWidget {
           child: Icon(
             locked ? Icons.lock : Icons.lock_open_outlined,
             color: locked ? Colors.amber : Colors.white54,
-            size: 24,
+            size: 22,
           ),
         ),
       );
@@ -546,8 +552,7 @@ class _RecordButtonState extends State<_RecordButton>
                 boxShadow: [
                   if (widget.isRecording)
                     BoxShadow(
-                      color: Colors.red
-                          .withOpacity(_anim.value * 0.6),
+                      color: Colors.red.withOpacity(_anim.value * 0.6),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
