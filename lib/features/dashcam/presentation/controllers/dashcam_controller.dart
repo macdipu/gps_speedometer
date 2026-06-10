@@ -48,6 +48,9 @@ class DashcamController extends GetxController {
   DateTime? _recordingStart;
   DateTime? _clipStart;
 
+  /// True when dashcam started the GPS trip — so it owns the stop call.
+  bool _ownsTripRecording = false;
+
   /// Paths of clips the user has locked — excluded from quota deletion.
   final Set<String> _lockedFiles = {};
 
@@ -144,6 +147,16 @@ class DashcamController extends GetxController {
       }
 
       unawaited(_updateStorageUsed());
+
+      // Start GPS trip recording if nothing already in progress.
+      if (!tripController.isRecording.value) {
+        try {
+          await tripController.startTrip();
+          _ownsTripRecording = true;
+        } catch (_) {
+          _ownsTripRecording = false;
+        }
+      }
     } catch (e) {
       Get.snackbar('Error', 'Failed to start recording',
           snackPosition: SnackPosition.BOTTOM);
@@ -167,6 +180,14 @@ class DashcamController extends GetxController {
     isCurrentClipLocked.value = false;
     isSwitchingClip.value = false;
     unawaited(_updateStorageUsed());
+
+    // Stop GPS trip recording only if dashcam started it.
+    if (_ownsTripRecording && tripController.isRecording.value) {
+      try {
+        await tripController.stopTrip();
+      } catch (_) {}
+      _ownsTripRecording = false;
+    }
   }
 
   // ── Clip cycling ───────────────────────────────────────────────────────────
