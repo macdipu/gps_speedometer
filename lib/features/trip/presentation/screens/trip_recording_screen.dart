@@ -22,13 +22,6 @@ class TripRecordingScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('trip_recording'.tr),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.videocam, color: context.primaryColor),
-            tooltip: 'dashcam'.tr,
-            onPressed: () => Get.toNamed('/dashcam'),
-          ),
-        ],
       ),
       body: Obx(() {
         final recording = controller.isRecording.value;
